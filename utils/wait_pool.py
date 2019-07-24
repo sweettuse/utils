@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor, wait
-from contextlib import contextmanager
 from typing import Optional
 
 import logging
@@ -11,14 +10,31 @@ log = logging.getLogger(__name__)
 
 class WaitPool:
     """
-    allow jobs to be submitted to either an existing pool or a dynamically-created one,
-    wait for it to complete, and have access to the futures outside the `with` block
+    pool that allows easy waiting using a `with` block.
 
+    ===============================
+    usage:
+    import time
+
+    def f(s):
+        print('starting', s)
+        time.sleep(s)
+        print('finishing', s)
+        return s ** 2
+
+    with WaitPool() as wp:
+        for s in range(8):
+            wp.submit(f, s)
+    print('done')
+    print('\n'.join(map(str, (f.result() for f in wp.futures))))
+    ===============================
+
+    the `with` block won't be exited until all futures have completed
     """
-    threads_per_pool = 8
+    _threads_per_pool = 8
 
     def __init__(self, pool: Optional[ThreadPoolExecutor] = None):
-        self._pool = pool or ThreadPoolExecutor(self.threads_per_pool)
+        self._pool = pool or ThreadPoolExecutor(self._threads_per_pool)
         self._futures = []
 
     @property
@@ -45,25 +61,6 @@ class WaitPool:
         self.wait()
 
 
-def f():
-    import time
-    print('start f')
-    time.sleep(1)
-    print('end f')
-
-
-print('start')
-with WaitPool(ThreadPoolExecutor(3)) as wp:
-    for _ in range(3):
-        wp.submit(f)
-print('done')
-
-import sys
-
-sys.exit()
-
-
-@U.timer
 def __main():
     pass
 
