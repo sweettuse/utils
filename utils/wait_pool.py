@@ -1,5 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor, wait
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, wait, Future
+from typing import Optional, List, Union, Any
+from threading import local
 
 import logging
 
@@ -12,49 +13,81 @@ class WaitPool:
     """
     pool that allows easy waiting using a `with` block.
 
-    ===============================
-    usage:
-    import time
+        >>> import time
 
-    def f(s):
-        print('starting', s)
-        time.sleep(s)
-        print('finishing', s)
-        return s ** 2
+        >>> def f(s):
+        >>>     print('starting', s)
+        >>>     time.sleep(s)
+        >>>     print('finishing', s)
+        >>>     return s ** 2
 
-    with WaitPool() as wp:
-        for s in range(8):
-            wp.submit(f, s)
-    print('done')
-    print('\n'.join(map(str, (f.result() for f in wp.futures))))
-    ===============================
+        >>> with WaitPool() as wp:
+        >>>     for s in range(8):
+        >>>         wp.submit(f, s)
+        >>> print('done')
+        >>> print('\\n'.join(map(str, wp.results)))
 
     the `with` block won't be exited until all futures have completed
     """
     _threads_per_pool = 8
 
-    def __init__(self, pool: Optional[ThreadPoolExecutor] = None):
-        self._pool = pool or ThreadPoolExecutor(self._threads_per_pool)
-        self._futures = []
+    def __init__(self, pool: Optional[Union[int, ThreadPoolExecutor]] = None):
+        self._pool = self._init_pool(pool)
+        self._local = local()
+
+    @staticmethod
+    def _init_pool(pool: Optional[Union[int, ThreadPoolExecutor]]):
+        if isinstance(pool, ThreadPoolExecutor):
+            return pool
+
+        if isinstance(pool, int):
+            num_threads = pool
+        elif pool is None:
+            num_threads = WaitPool._threads_per_pool
+        else:
+            raise ValueError(f'invalid value for `pool`: {pool!r}')
+
+        return ThreadPoolExecutor(num_threads)
 
     @property
-    def futures(self):
-        return self._futures
+    def futures(self) -> List[Future]:
+        try:
+            f = self._local.futures
+        except AttributeError:
+            f = self._local.futures = []
+        return f
+
+    @property
+    def results(self) -> List[Any]:
+        return [f.result() for f in self.futures]
 
     def wait(self):
-        wait(self._futures)
+        wait(self.futures)
 
     def __getattr__(self, item):
         """proxy for underlying pool object"""
+        desc = type(self).__dict__.get(item)
+        if hasattr(desc, '__get__'):
+            return desc.__get__(self)
         return getattr(self._pool, item)
 
     def submit(self, fn, *args, **kwargs):
         fut = self._pool.submit(fn, *args, **kwargs)
-        self._futures.append(fut)
+        self.futures.append(fut)
         return fut
 
+    def map(self, fn, *iterables):
+        self.futures.extend(self._pool.submit(fn, *args) for args in zip(*iterables))
+
+    def dispatch(self, fn, *args, **kwargs):
+        """
+        fire and forget
+        run on thread pool but don't wait for completion
+        """
+        return self._pool.submit(fn, *args, **kwargs)
+
     def __enter__(self):
-        self._futures.clear()
+        self.futures.clear()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -62,6 +95,7 @@ class WaitPool:
 
 
 def __main():
+    help(WaitPool)
     pass
 
 
