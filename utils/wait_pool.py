@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor, wait, Future
+from concurrent.futures import ThreadPoolExecutor, wait, Future, ProcessPoolExecutor
 from typing import Optional, List, Union, Any
 from threading import local
 
@@ -21,23 +21,26 @@ class WaitPool:
         >>>     print('finishing', s)
         >>>     return s ** 2
 
-        >>> with WaitPool() as wp:
+        >>> with WaitPool(8) as wp:
         >>>     for s in range(8):
         >>>         wp.submit(f, s)
         >>> print('done')
         >>> print('\\n'.join(map(str, wp.results)))
 
     the `with` block won't be exited until all futures have completed
+
+    if passed a pool (Thread/Process), will use that pool.
+    if passed an `int`, will create a new ThreadPoolExecutor with that many threads
     """
     _threads_per_pool = 8
 
-    def __init__(self, pool: Optional[Union[int, ThreadPoolExecutor]] = None):
+    def __init__(self, pool: Optional[Union[int, ThreadPoolExecutor, ProcessPoolExecutor]] = None):
         self._pool = self._init_pool(pool)
         self._local = local()
 
     @staticmethod
-    def _init_pool(pool: Optional[Union[int, ThreadPoolExecutor]]):
-        if isinstance(pool, ThreadPoolExecutor):
+    def _init_pool(pool: Optional[Union[int, ThreadPoolExecutor, ProcessPoolExecutor]]):
+        if isinstance(pool, (ProcessPoolExecutor, ThreadPoolExecutor)):
             return pool
 
         if isinstance(pool, int):
@@ -96,7 +99,6 @@ class WaitPool:
 
 def __main():
     help(WaitPool)
-    pass
 
 
 if __name__ == '__main__':
