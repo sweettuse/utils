@@ -18,7 +18,7 @@ async def drive(forward=0, left_right=0):
 
 
 async def stop():
-    return 'stopping'
+    return 'driving: stopping'
 
 
 api.movement.drive = drive
@@ -35,9 +35,7 @@ chords[{Key.up, Key.right}] = OnOff(lambda: api.movement.drive(50, 50), lambda: 
 chords[{Key.down, Key.left}] = OnOff(lambda: api.movement.drive(-50, -50), lambda: api.movement.stop())
 chords[{Key.down, Key.right}] = OnOff(lambda: api.movement.drive(-50, 50), lambda: api.movement.stop())
 
-
 # TODO: add eye control
-
 
 
 print(chords.get({Key.up}))
