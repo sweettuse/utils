@@ -1,9 +1,7 @@
 import asyncio
 from types import SimpleNamespace
 
-from misty_py.api import MistyAPI
-
-from utils.keyboard_reader import OnOff, nothing, Chords, run_parse_input
+from utils.keyboard.keyboard_reader import OnOff, Chords, KeyboardParser
 from pynput.keyboard import Key
 
 # api = MistyAPI('https://fake')
@@ -38,6 +36,5 @@ chords[{Key.down, Key.right}] = OnOff(lambda: api.movement.drive(-50, 50), lambd
 # TODO: add eye control
 
 
-print(chords.get({Key.up}))
-asyncio.run(run_parse_input(chords))
+asyncio.run(KeyboardParser(chords, use_last_triggered=False).parse_input())
 # chords = {frozenset((Key.up,)): OnOff(api.movement.drive
