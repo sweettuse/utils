@@ -1,9 +1,9 @@
 import asyncio
-from enum import Enum
 from types import SimpleNamespace
 
-from utils.keyboard.chord import OnOff, Chords, KeyboardParser, ChordGroup, WrappedAsync
 from pynput.keyboard import Key
+
+from utils.keyboard.chord import OnOff, Chords, ChordGroup, WrappedAsync, Commands
 
 # api = MistyAPI('https://fake')
 chords = Chords()
@@ -20,13 +20,22 @@ async def stop():
     return 'driving: stopping'
 
 
+async def halt():
+    return 'HALT'
+
+
 class MistyChordGroup(ChordGroup):
     drive = 'd'
     head = 'h'
 
 
+async def _async_r(s):
+    return s
+
+
 api.movement.drive = drive
 api.movement.stop = stop
+api.movement.halt = halt
 
 
 def _create_drive_func(on: WrappedAsync):
@@ -34,18 +43,23 @@ def _create_drive_func(on: WrappedAsync):
 
 
 # driving
-chords[{Key.up}] = _create_drive_func(lambda: api.movement.drive(50))
-chords[{Key.right}] = _create_drive_func(lambda: api.movement.drive(left_right=50))
-chords[{Key.down}] = _create_drive_func(lambda: api.movement.drive(-50))
-chords[{Key.left}] = _create_drive_func(lambda: api.movement.drive(left_right=-50))
+chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(50))
+chords[Key.right,] = _create_drive_func(lambda: api.movement.drive(left_right=50))
+chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-50))
+chords[Key.left,] = _create_drive_func(lambda: api.movement.drive(left_right=-50))
 
-chords[{Key.up, Key.left}] = _create_drive_func(lambda: api.movement.drive(50, -50))
-chords[{Key.up, Key.right}] = _create_drive_func(lambda: api.movement.drive(50, 50))
-chords[{Key.down, Key.left}] = _create_drive_func(lambda: api.movement.drive(-50, -50))
-chords[{Key.down, Key.right}] = _create_drive_func(lambda: api.movement.drive(-50, 50))
+chords[Key.up, Key.left] = _create_drive_func(lambda: api.movement.drive(50, -50))
+chords[Key.up, Key.right] = _create_drive_func(lambda: api.movement.drive(50, 50))
+chords[Key.down, Key.left] = _create_drive_func(lambda: api.movement.drive(-50, -50))
+chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-50, 50))
 
+# stop everything
+chords[Key.shift, 'h'] = OnOff(lambda: api.movement.halt(), lambda: api.movement.halt(), group=object())
+chords[Key.space,] = Commands.stop
+
+# head
 # TODO: add eye control
 
 
-asyncio.run(KeyboardParser(chords, use_last_triggered=False).parse_input())
+asyncio.run(chords.parse())
 # chords = {frozenset((Key.up,)): OnOff(api.movement.drive

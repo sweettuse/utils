@@ -5,7 +5,6 @@ import uvloop
 from pynput import keyboard
 from pynput.keyboard import Key
 
-from utils.core import exhaust
 from utils.keyboard.core import is_mod_key, SplitKeys, listen, AsyncThreadEvent
 
 uvloop.install()
@@ -30,36 +29,34 @@ class SimpleParser:
             self._keys.clear()
             self._process_pending.set()
             return False  # stop listener
+
         if is_mod_key(key):
             self._keys.remove(key)
 
     async def _process(self, listener: keyboard.Listener) -> AsyncIterable[FrozenSet]:
+        """handle the legwork of processing events after `_debounce_s`"""
         while listener.running:
             await self._process_pending.wait()
             if not listener.running:
                 break
             await asyncio.sleep(self._debounce_s)
 
-            self._process_pending.clear()
             frozen = self._keys.frozen
             self._keys.clear_regular()
+            self._process_pending.clear()
             yield frozen
 
     async def read_chars(self):
+        """read chars every `_debounce_s` seconds and yield the frozenset of all keys pushed"""
         async with listen(self._on_press, self._on_release, stop_or_join='join') as listener:
             async for keys in self._process(listener):
                 yield keys
 
     async def display_chars(self):
+        """useful for debugging"""
         async for keys in self.read_chars():
             print(keys)
 
+
 if __name__ == '__main__':
     asyncio.run(SimpleParser().display_chars())
-# asyncio.run(run_parse_input(test_chords))
-# controller = keyboard.Controller()
-# controller.press('a')
-# controller.press(keyboard.Key.shift_r)
-# controller.release(keyboard.Key.shift_r)
-# controller.press('a')
-# listener.join()

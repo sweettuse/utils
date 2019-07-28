@@ -62,7 +62,7 @@ class KeySet:
 
     @_lock_and_transform
     def remove(self, key):
-        with suppress(Exception):
+        with suppress(KeyError):
             self.s.remove(key)
 
     def clear(self):
@@ -128,7 +128,7 @@ class SplitKeys:
 
 @asynccontextmanager
 async def listen(on_press, on_release, stop_or_join='stop'):
-    """listen to keyboard presses/releases"""
+    """listen to keyboard presses/releases in a separate thread"""
     listener = keyboard.Listener(on_press=on_press, on_release=on_release)
     listener.start()
     try:
@@ -138,7 +138,10 @@ async def listen(on_press, on_release, stop_or_join='stop'):
 
 
 class AsyncThreadEvent:
-    """event that can be used from both threads and event loops"""
+    """
+    event that can be set/cleared from both threads and event loops
+    and waited for in event loops
+    """
 
     def __init__(self):
         self._q = Queue()
