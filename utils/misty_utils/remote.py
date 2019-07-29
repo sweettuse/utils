@@ -8,7 +8,7 @@ from utils.keyboard.chord import OnOff, Chords, ChordGroup, WrappedAsync, Comman
 # api = MistyAPI('https://fake')
 chords = Chords()
 
-api = SimpleNamespace()  # represent MistyAPI
+api = SimpleNamespace()  # represent fake MistyAPI
 api.movement = SimpleNamespace()
 
 
@@ -38,11 +38,11 @@ api.movement.stop = stop
 api.movement.halt = halt
 
 
+# driving
 def _create_drive_func(on: WrappedAsync):
     return OnOff(on, lambda: api.movement.stop(), MistyChordGroup.drive)
 
 
-# driving
 chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(50))
 chords[Key.right,] = _create_drive_func(lambda: api.movement.drive(left_right=50))
 chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-50))
@@ -57,7 +57,7 @@ chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-50,
 chords[Key.shift, 'h'] = OnOff(lambda: api.movement.halt(), lambda: api.movement.halt(), group=object())
 chords[Key.space,] = Commands.stop
 
-# head
+# TODO: head
 # TODO: add eye control
 
 
