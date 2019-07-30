@@ -76,8 +76,9 @@ def the_google_shuffle(data, n_translations: Optional[int] = 6, source_language=
                        show_intermediate_results: bool = False):
     """
     mutate a sentence by passing it through n_translations languages
+    it's like the game of "telephone"
 
-    if `n_translations` is `None`, will go through all languages
+    if `n_translations` is `None`, will go through all languages, which is perhaps not the best move
     """
     langs = [d['language'] for d in _translate_client.get_languages()]
     random.shuffle(langs)
