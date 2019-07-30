@@ -36,7 +36,7 @@ class Chords(dict):
     way to map chords of keys to actions to take
 
     a "chord" is simply one or more keys pressed at any given moment
-    e.g., cmd + esc, or shift + up
+    e.g., cmd+esc, or shift+up, or l+t+r
     """
 
     def get(self, keys, default=None) -> OnOff:
@@ -48,17 +48,16 @@ class Chords(dict):
         prev = Commands.nothing
 
         async for keys in parser.read_chars():
-            prev = await self._parse_one(keys, prev)
+            prev = await self.parse_one(keys, prev)
         await prev.off()
 
     async def parse_one(self, keys, prev: OnOff) -> Optional[OnOff]:
         current = self.get(keys)
         if current is None:
-            # we haven't found a known chord
             return None
 
         if current is Commands.stop:
-            """stop what is currently running"""
+            # stop what is currently running
             print('  OFF:', await prev.off())
             return Commands.nothing
         elif current == prev:
@@ -69,9 +68,9 @@ class Chords(dict):
             print('   CHANGED:', await current.on())
         return current
 
-    def __init__(self, debounce_secs=.1):
+    def __init__(self, debounce_s=.1):
         super().__init__()
-        self._debounce_s = debounce_secs
+        self._debounce_s = debounce_s
 
     def __setitem__(self, keys, val):
         return super().__setitem__(frozenset(keys), val)
@@ -87,6 +86,7 @@ class StateChords(State):
 
 
 async def parse_state(state_chords: StateChords, debounce_s: int = .04):
+    """parse both state and execute chord callbacks as needed"""
     parser = StateParser(state_chords, debounce_s, frozenset((Key.shift, Key.esc)))
     prev: OnOff = Commands.nothing
     prev_state = state_chords
@@ -97,8 +97,7 @@ async def parse_state(state_chords: StateChords, debounce_s: int = .04):
         if prev_state != state:
             print('  OFF:', await prev.off())
         prev_state = state
-        new = await state.chords.parse_one(keys, prev)
-        new = new or await state.root.chords.parse_one(keys, prev)
+        new = await state.chords.parse_one(keys, prev) or await state.root.chords.parse_one(keys, prev)
         prev = new or prev
 
     await prev.off()

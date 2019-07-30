@@ -13,12 +13,12 @@ uvloop.install()
 
 class SimpleParser:
     """
-    parse and group inputs after `debounce_secs` from first input of group
+    parse and group inputs after `debounce_s` from first input of group
     """
 
-    def __init__(self, debounce_secs=.04, listener_stop_combo: FrozenSet = frozenset((Key.shift, Key.esc))):
+    def __init__(self, debounce_s=.04, listener_stop_combo: FrozenSet = frozenset((Key.shift, Key.esc))):
         self._keys = SplitKeys()
-        self._debounce_s = debounce_secs
+        self._debounce_s = debounce_s
         self._process_pending = AsyncThreadEvent()
         self._listener_stop_combo = listener_stop_combo
         self._join_or_stop = 'stop'
@@ -66,8 +66,8 @@ class StateKeys(NamedTuple):
 
 class StateParser(SimpleParser):
 
-    def __init__(self, state: State, debounce_secs=.04, listener_stop_combo: FrozenSet = frozenset((Key.esc,))):
-        super().__init__(debounce_secs, listener_stop_combo)
+    def __init__(self, state: State, debounce_s=.04, listener_stop_combo: FrozenSet = frozenset((Key.esc,))):
+        super().__init__(debounce_s, listener_stop_combo)
         self._state = state
 
     def _update_state(self, key) -> bool:

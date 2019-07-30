@@ -22,7 +22,7 @@ MOD_KEYS = {Key.shift, Key.cmd, Key.ctrl, Key.esc, Key.alt}
 def _transform_key(key):
     """keys from pynput either have a `char` attribute or they don't"""
     char = getattr(key, 'char', None)
-    if char is not None:
+    if isinstance(char, str):
         return key.char.lower()
     if key in _keys_with_directions:
         return getattr(key, key.name.split('_')[0])
@@ -48,7 +48,10 @@ def _lock_and_transform(func):
 
 
 class KeySet:
-    """thread-safe way to store key presses/chords of keys pressed"""
+    """
+    thread-safe way to store key presses/chords of keys pressed
+    note: only stores lower case keys (for keys where that is an option)
+    """
 
     def __init__(self):
         self.s = set()
@@ -141,8 +144,10 @@ async def listen(on_press, on_release, stop_or_join='stop'):
 
 class AsyncThreadEvent:
     """
-    event that can be set/cleared from both threads and event loops
-    and waited for in event loops
+    event that can be:
+        - set/cleared from both threads and event loops
+        - waited for in event loops
+    cannot be used by multiple waiters
     """
 
     def __init__(self):
