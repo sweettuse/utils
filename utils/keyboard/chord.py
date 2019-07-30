@@ -3,7 +3,8 @@ from typing import Callable, Coroutine, Any, NamedTuple, Set, FrozenSet, Dict, O
 
 from pynput.keyboard import Key
 
-from utils.keyboard.reader import SimpleParser
+from utils.keyboard.reader import SimpleParser, StateParser
+from utils.keyboard.state import State
 
 __author__ = 'acushner'
 
@@ -38,17 +39,6 @@ class Chords(dict):
     e.g., cmd + esc, or shift + up
     """
 
-    def __init__(self, states: Set = None, debounce_secs=.1):
-        super().__init__()
-        self._states = states or set()
-        self._debounce_s = debounce_secs
-
-    def __setitem__(self, keys, val):
-        return super().__setitem__(frozenset(keys), val)
-
-    def __getitem__(self, keys):
-        return super().__getitem__(frozenset(keys))
-
     def get(self, keys, default=None) -> OnOff:
         return super().get(frozenset(keys), default)
 
@@ -58,25 +48,60 @@ class Chords(dict):
         prev = Commands.nothing
 
         async for keys in parser.read_chars():
-            current = self.get(keys)
-            if current is None:
-                # we haven't found a known chord
-                continue
-
-            if current is Commands.stop:
-                """stop what is currently running"""
-                print('  OFF:', await prev.off())
-                prev = Commands.nothing
-                continue
-
-            elif current == prev:
-                print('   unchanged:', await current.on())
-            else:
-                if current.group != prev.group:
-                    print('  OFF:', await prev.off())
-                print('   CHANGED:', await current.on())
-            prev = current
+            prev = await self._parse_one(keys, prev)
         await prev.off()
+
+    async def parse_one(self, keys, prev: OnOff) -> Optional[OnOff]:
+        current = self.get(keys)
+        if current is None:
+            # we haven't found a known chord
+            return None
+
+        if current is Commands.stop:
+            """stop what is currently running"""
+            print('  OFF:', await prev.off())
+            return Commands.nothing
+        elif current == prev:
+            print('   unchanged:', await current.on())
+        else:
+            if current.group != prev.group:
+                print('  OFF:', await prev.off())
+            print('   CHANGED:', await current.on())
+        return current
+
+    def __init__(self, debounce_secs=.1):
+        super().__init__()
+        self._debounce_s = debounce_secs
+
+    def __setitem__(self, keys, val):
+        return super().__setitem__(frozenset(keys), val)
+
+    def __getitem__(self, keys):
+        return super().__getitem__(frozenset(keys))
+
+
+class StateChords(State):
+    def __init__(self, name, chords: Chords, key_char_override=None):
+        super().__init__(name, key_char_override)
+        self.chords = chords
+
+
+async def parse_state(state_chords: StateChords, debounce_s: int = .04):
+    parser = StateParser(state_chords, debounce_s, frozenset((Key.shift, Key.esc)))
+    prev: OnOff = Commands.nothing
+    prev_state = state_chords
+
+    async for state, keys in parser.read_chars():
+        print(80 * '=')
+        print()
+        if prev_state != state:
+            print('  OFF:', await prev.off())
+        prev_state = state
+        new = await state.chords.parse_one(keys, prev)
+        new = new or await state.root.chords.parse_one(keys, prev)
+        prev = new or prev
+
+    await prev.off()
 
 
 _test_chords = Chords()

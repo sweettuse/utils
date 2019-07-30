@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import suppress, asynccontextmanager
-from functools import wraps
+from functools import wraps, lru_cache
 from queue import Queue
 from threading import RLock
 
@@ -18,9 +18,11 @@ MOD_KEYS = {Key.shift, Key.cmd, Key.ctrl, Key.esc, Key.alt}
 # MOD_KEYS.update(getattr(Key, f'f{n}') for n in range(1, 21))
 
 
+@lru_cache()
 def _transform_key(key):
     """keys from pynput either have a `char` attribute or they don't"""
-    if hasattr(key, 'char'):
+    char = getattr(key, 'char', None)
+    if char is not None:
         return key.char.lower()
     if key in _keys_with_directions:
         return getattr(key, key.name.split('_')[0])
@@ -28,7 +30,7 @@ def _transform_key(key):
 
 
 def is_mod_key(key):
-    return key in MOD_KEYS
+    return _transform_key(key) in MOD_KEYS
 
 
 def _lock_and_transform(func):

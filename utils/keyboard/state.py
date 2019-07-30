@@ -1,33 +1,71 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, NamedTuple, List, Set
+
+from more_itertools import always_iterable
 
 __author__ = 'acushner'
+
+
+class StateChars(NamedTuple):
+    state: State
+    used_chars: List[str]
 
 
 class State:
     _cache = set()
 
-    def __init__(self, name):
+    def __init__(self, name, key_char_override=None):
         self.name = name
-        self.children = set()
-        self.parents = set()
+        self.children: Set[State] = set()
+        self.parents: Set[State] = set()
         self.root: Optional[State] = None  # will be set later
+        self.key_char = key_char_override or name[0]
         self._cache.add(self)
 
-    def add_child(self, state: State):
-        self.children.add(state)
+    def display(self):
+        print(f'{self.parents} -> <{self}> -> {self.children}')
 
-    def add_parent(self, state: State):
-        self.parents.add(state)
+    @staticmethod
+    def _transform_key(key):
+        return getattr(key, 'char', key)
+
+    def _parse_one(self, char) -> State:
+        c_transformed = self._transform_key(char)
+        for child in self.children:
+            if child.key_char == c_transformed:
+                return child
+        if self.root.key_char == c_transformed:
+            return self.root
+        return self
+
+    def parse(self, chars, used_chars: List = None) -> StateChars:
+        used = []
+        prev = new = self
+        for c in always_iterable(chars):
+            new = prev._parse_one(c)
+            if new != prev:
+                print('NEW STATE:', new)
+                used.append(c)
+        return StateChars(new, used)
+
+    @classmethod
+    @contextmanager
+    def create_machine(cls, root: State):
+        yield
+        for s in cls._cache:
+            if s is not root and not s.parents:
+                root >> s
+            s.root = root
+        cls._cache.clear()
 
     def __rshift__(self, state: State):
-        self.add_child(state)
-        state.add_parent(self)
+        self.children.add(state)
+        state.parents.add(self)
         return state
 
-    def __lshift__(self, state):
+    def __lshift__(self, state: State):
         state >> self
         return state
 
@@ -40,48 +78,7 @@ class State:
     def __repr__(self):
         return f'{type(self).__name__}({self.name})'
 
+    def __bool__(self):
+        return True
+
     __str__ = __repr__
-
-    def display(self):
-        print(f'{self.parents} -> <{self}> -> {self.children}')
-
-    def parse(self, chars):
-        # check children
-        if not chars:
-            return self
-        c, *rest = chars
-        for child in self.children:
-            if child.name.startswith(c):
-                return child.parse(rest)
-
-        to_parse = rest if self.root is self else chars
-        return self.root.parse(to_parse)
-
-    @classmethod
-    @contextmanager
-    def create_machine(cls, name):
-        yield
-        root = StateRoot(name)
-        for s in cls._cache:
-            root.add_child(s)
-            s.root = root
-        cls._cache.clear()
-
-
-class StateRoot(State):
-    pass
-
-
-with State.create_machine('__root__'):
-    jeb = State('jeb')
-    tuse = State('tuse')
-
-    head = State('head')
-    pitch = head >> State('pitch')
-    yaw = head >> State('yaw')
-    roll = head >> State('roll')
-
-head.parse('yyhp').display()
-
-# head.display()
-# yaw.display()
