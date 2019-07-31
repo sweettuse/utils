@@ -42,7 +42,7 @@ def _lock_and_transform(func):
     @wraps(func)
     def wrapper(self, key):
         with self._lock:
-            func(self, _transform_key(key))
+            return func(self, _transform_key(key))
 
     return wrapper
 
