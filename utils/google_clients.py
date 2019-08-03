@@ -15,8 +15,8 @@ _stt_client = speech.SpeechClient()
 _translate_client = translate.Client()
 
 
-def text_to_speech(text: str, encoding=_tts_client.enums.AudioEncoding.LINEAR16, language_code='en-US',
-                   voice_name='en-US-Wavenet-E', pitch=4, speaking_rate=1) -> bytes:
+def text_to_speech(text: str, encoding=_tts_client.enums.AudioEncoding.MP3, language_code='en-US',
+                   voice_name='en-US-Wavenet-E', pitch=2, speaking_rate=1) -> bytes:
     """hit google's text-to-speech API"""
     si = tts.types.SynthesisInput(text=text)
     audio_conf = tts.types.AudioConfig(audio_encoding=encoding, pitch=pitch, speaking_rate=speaking_rate)
@@ -101,17 +101,39 @@ def the_google_shuffle(data, n_translations: Optional[int] = 6, source_language=
     return trans
 
 
+def _translate_simpsons_quote(s: str):
+    num, rest = s.split(maxsplit=1)
+    r = text_to_speech(rest)
+    with open(f'/tmp/simpsons/simpsons_{num}mp3', 'wb') as f:
+        f.write(r)
+
+
+def translate_simpsons_quotes():
+    with open('/tmp/simpsons_quotes.txt') as f:
+        for line in f:
+            _translate_simpsons_quote(line)
+
+
 def __main():
-    print(_translate_client.get_languages())
-    res = _translate('i am the very model of the modern major general', 'fr')
-    source = "a pet fanatic who lives like there’s no tomorrow"
-    res = the_google_shuffle(source, n_translations=6)
-    res = speech_to_text('/tmp/ggl_test_mono.wav')
-    print(_parse_stt_res(res))
-    sound = text_to_speech('jebtuse my main man! i am co-pi-lette')
-    play_sound(sound)
-    with open('/tmp/ggl.raw', 'wb') as f:
-        f.write(sound)
+    # t = _translate_client.get_languages()
+    translate_simpsons_quotes()
+    return
+    r = text_to_speech(
+        '90. Hi, I’m Troy McClure. You might remember me from such self-help videos as “Smoke Yourself Thin” and “Get Confident, Stupid.”  -Troy McClure')
+    play_sound(r)
+    # print([l for l in t if 'span' in l['name'].lower()])
+    # t = t
+    # print(_translate('my god, tatiana you are such a beauty!', 'es'))
+
+    # res = _translate('i am the very model of the modern major general', 'fr')
+    # source = "a pet fanatic who lives like there’s no tomorrow"
+    # res = the_google_shuffle(source, n_translations=6)
+    # res = speech_to_text('/tmp/ggl_test_mono.wav')
+    # print(_parse_stt_res(res))
+    # sound = text_to_speech('sweettuse: recognized!  playing theme song')
+    # play_sound(sound)
+    # with open('/tmp/sweettuse_recognized.mp3', 'wb') as f:
+    #     f.write(sound)
 
 
 if __name__ == '__main__':
