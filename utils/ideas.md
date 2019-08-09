@@ -1,5 +1,5 @@
 - [ ] grab seats from database and say hello in all languages
-- [ ] create a keyboard reader
+- [x] create a keyboard reader
 - [ ] youtube to mp3: https://mp3converter.to
 
 

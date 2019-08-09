@@ -91,16 +91,18 @@ async def parse_state(state_chords: StateChords, debounce_s: int = .04):
     prev: OnOff = Commands.nothing
     prev_state = state_chords
 
-    async for state, keys in parser.read_chars():
-        print(80 * '=')
-        print()
-        if prev_state != state:
-            print('  OFF:', await prev.off())
-        prev_state = state
-        new = await state.chords.parse_one(keys, prev) or await state.root.chords.parse_one(keys, prev)
-        prev = new or prev
+    try:
+        async for state, keys in parser.read_chars():
+            print(80 * '=')
+            print()
+            if prev_state != state:
+                print('  OFF:', await prev.off())
+            prev_state = state
+            new = await state.chords.parse_one(keys, prev) or await state.root.chords.parse_one(keys, prev)
+            prev = new or prev
 
-    await prev.off()
+    finally:
+        await prev.off()
 
 
 _test_chords = Chords()

@@ -3,15 +3,16 @@ from collections import ChainMap
 from types import SimpleNamespace
 from typing import Optional
 
+from misty_py.api import MistyAPI
 from misty_py.utils import ArmSettings
 from pynput.keyboard import Key
 
 from utils.keyboard.chord import OnOff, Chords, ChordGroup, WrappedAsync, Commands, StateChords, parse_state
 
-# api = MistyAPI('https://fake')
+api = MistyAPI('http://192.168.86.20')
 
-api = SimpleNamespace()  # represent fake MistyAPI
-api.movement = SimpleNamespace()
+# api = SimpleNamespace()  # represent fake MistyAPI
+# api.movement = SimpleNamespace()
 
 
 async def drive(forward=0, left_right=0):
@@ -45,11 +46,11 @@ async def move_arms(l_position: Optional[float] = None, l_velocity: Optional[flo
     return f'{ArmSettings("left", l_position, l_velocity)},{ArmSettings("right", r_position, r_velocity)}'
 
 
-api.movement.drive = drive
-api.movement.stop = stop
-api.movement.halt = halt
-api.movement.move_head = move_head
-api.movement.move_arms = move_arms
+# api.movement.drive = drive
+# api.movement.stop = stop
+# api.movement.halt = halt
+# api.movement.move_head = move_head
+# api.movement.move_arms = move_arms
 
 
 def _get_drive_chords():
@@ -58,15 +59,15 @@ def _get_drive_chords():
         return OnOff(on, lambda: api.movement.stop(), MistyChordGroup.drive)
 
     chords = Chords()
-    chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(50))
-    chords[Key.right,] = _create_drive_func(lambda: api.movement.drive(left_right=50))
-    chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-50))
-    chords[Key.left,] = _create_drive_func(lambda: api.movement.drive(left_right=-50))
+    chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(10))
+    chords[Key.right,] = _create_drive_func(lambda: api.movement.drive(0, 1))
+    chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-10))
+    chords[Key.left,] = _create_drive_func(lambda: api.movement.drive(0, -1))
 
-    chords[Key.up, Key.left] = _create_drive_func(lambda: api.movement.drive(50, -50))
-    chords[Key.up, Key.right] = _create_drive_func(lambda: api.movement.drive(50, 50))
-    chords[Key.down, Key.left] = _create_drive_func(lambda: api.movement.drive(-50, -50))
-    chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-50, 50))
+    chords[Key.up, Key.left] = _create_drive_func(lambda: api.movement.drive(10, -1))
+    chords[Key.up, Key.right] = _create_drive_func(lambda: api.movement.drive(10, 1))
+    chords[Key.down, Key.left] = _create_drive_func(lambda: api.movement.drive(-10, -1))
+    chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-10, 1))
     return chords
 
 
@@ -122,7 +123,10 @@ with StateChords.create_machine(root):
 
 # TODO: add eye control
 
-
+# loop = asyncio.get_event_loop()
+# asyncio.run
 asyncio.run(parse_state(root))
+
+# asyncio.run(parse_state(root))
 # asyncio.run(chords.parse())
 # chords = {frozenset((Key.up,)): OnOff(api.movement.drive
