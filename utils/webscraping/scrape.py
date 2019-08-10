@@ -11,7 +11,7 @@ import requests
 
 __author__ = 'acushner'
 
-_pool = ThreadPoolExecutor(8)
+_pool = ThreadPoolExecutor(16)
 
 
 async def get(url):
@@ -56,11 +56,12 @@ def get_name(url, link):
 
 def __main():
     # url = 'https://themushroomkingdom.net/media/smb/wav'
-    url = 'https://downloads.khinsider.com/game-soundtracks/album/rockman-2-megaman-2-complete-works'
+    url = 'https://downloads.khinsider.com/game-soundtracks/album/legend-of-zelda-the-a-link-to-the-past-snes'
     # outdir = f'/tmp/{Path(url).name}'
-    outdir = f'/tmp/mm2'
+    outdir = f'/Users/xaxis/software/sweettuse/utils/utils/misty_utils/assets/audio/zelda/alttp'
     os.system(f'mkdir -p {outdir}')
-    res = asyncio.run(run(url, outdir, lambda l: l and l.endswith('.mp3'), link_twice=True))
+    link_twice = 'downloads.khinsider.com' in url
+    res = asyncio.run(run(url, outdir, lambda l: l and l.endswith('.mp3'), link_twice=link_twice))
     print(res)
 
 

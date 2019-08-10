@@ -15,12 +15,18 @@ _stt_client = speech.SpeechClient()
 _translate_client = translate.Client()
 
 
+def ssmlify_text(text):
+    if text.startswith('<speak>'):
+        return text
+    return f'<speak>{text}</speak>'
+
+
 def text_to_speech(text: str, encoding=_tts_client.enums.AudioEncoding.MP3, language_code='en-US',
                    voice_name='en-US-Wavenet-E', pitch=2, speaking_rate=1) -> bytes:
     """hit google's text-to-speech API"""
-    si = tts.types.SynthesisInput(text=text)
+    si = tts.types.SynthesisInput(ssml=ssmlify_text(text))
     audio_conf = tts.types.AudioConfig(audio_encoding=encoding, pitch=pitch, speaking_rate=speaking_rate)
-    voice = tts.types.VoiceSelectionParams(language_code=language_code, name=voice_name)
+    voice = tts.types.VoiceSelectionParams(language_code=language_code, name=voice_name, ssml_gender='FEMALE')
     return _tts_client.synthesize_speech(si, voice, audio_conf).audio_content
 
 
@@ -114,13 +120,29 @@ def translate_simpsons_quotes():
             _translate_simpsons_quote(line)
 
 
+suffix_type_dict = dict(mp3=_tts_client.enums.AudioEncoding.MP3,
+                        wav=_tts_client.enums.AudioEncoding.LINEAR16)
+
+
+def _stt():
+    res = speech_to_text('/tmp/ftuid_be4724e4.wav')
+    print(res)
+
+
 def __main():
+    return _stt()
     # t = _translate_client.get_languages()
-    translate_simpsons_quotes()
-    return
-    r = text_to_speech(
-        '90. Hi, I’m Troy McClure. You might remember me from such self-help videos as “Smoke Yourself Thin” and “Get Confident, Stupid.”  -Troy McClure')
+    # translate_simpsons_quotes()
+    t = '<speak>to help you remain tranquil in the face of almost-certain death, smooth jazz will be deployed in ' \
+        '3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
+    # t = 'ready to have your face trained? look at me and smile. keep looking at me until the music stops playing'
+    # t = '<speak>starting in 3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
+    t = "now that i recognize you, i'll be seeing you around!"
+    suffix = 'wav'
+    r = text_to_speech(t, suffix_type_dict[suffix])
     play_sound(r)
+    with open(f'/tmp/see_you_around.{suffix}', 'wb') as f:
+        f.write(r)
     # print([l for l in t if 'span' in l['name'].lower()])
     # t = t
     # print(_translate('my god, tatiana you are such a beauty!', 'es'))
