@@ -1,15 +1,13 @@
 import asyncio
 from collections import ChainMap
-from types import SimpleNamespace
 from typing import Optional
 
-from misty_py.api import MistyAPI
 from misty_py.utils import ArmSettings
 from pynput.keyboard import Key
 
 from utils.keyboard.chord import OnOff, Chords, ChordGroup, WrappedAsync, Commands, StateChords, parse_state
+from utils.misty_utils.core import api
 
-api = MistyAPI('http://192.168.86.20')
 
 # api = SimpleNamespace()  # represent fake MistyAPI
 # api.movement = SimpleNamespace()
