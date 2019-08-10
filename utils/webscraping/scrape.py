@@ -34,10 +34,13 @@ async def download(url, outdir):
         f.write(res.content)
 
 
-async def run(url, outdir, predicate=None):
+async def run(url, outdir, predicate=None, link_twice=False):
     links = await parse_content(await get(url), predicate)
     print(links)
     full_links = {get_name(url, link) for link in links}
+    if link_twice:
+        coros = (run(link, outdir, predicate, link_twice=False) for link in full_links)
+        return await asyncio.gather(*coros)
     coros = (download(url, outdir) for url in full_links)
     await asyncio.gather(*coros)
     # await download(get_name(url, next(full_links)), outdir)
@@ -53,12 +56,12 @@ def get_name(url, link):
 
 def __main():
     # url = 'https://themushroomkingdom.net/media/smb/wav'
-    url = 'https://downloads.khinsider.com/game-soundtracks/album/castlevania-iii-dracula-s-curse'
+    url = 'https://downloads.khinsider.com/game-soundtracks/album/rockman-2-megaman-2-complete-works'
     # outdir = f'/tmp/{Path(url).name}'
-    outdir = f'/tmp/castlevania3'
+    outdir = f'/tmp/mm2'
     os.system(f'mkdir -p {outdir}')
-    res = asyncio.run(run(url, outdir, lambda l: l and l.endswith('.mp3')))
-    pass
+    res = asyncio.run(run(url, outdir, lambda l: l and l.endswith('.mp3'), link_twice=True))
+    print(res)
 
 
 if __name__ == '__main__':
