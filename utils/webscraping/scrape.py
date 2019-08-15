@@ -56,9 +56,9 @@ def get_name(url, link):
 
 def __main():
     # url = 'https://themushroomkingdom.net/media/smb/wav'
-    url = 'https://downloads.khinsider.com/game-soundtracks/album/legend-of-zelda-the-a-link-to-the-past-snes'
+    url = 'https://downloads.khinsider.com/game-soundtracks/album/katamari-damacy-we-love-katamari-damacy-original-soundtrack'
     # outdir = f'/tmp/{Path(url).name}'
-    outdir = f'/Users/xaxis/software/sweettuse/utils/utils/misty_utils/assets/audio/zelda/alttp'
+    outdir = f'/Users/xaxis/software/sweettuse/utils/utils/misty/assets/audio/katamari_we_love_ost'
     os.system(f'mkdir -p {outdir}')
     link_twice = 'downloads.khinsider.com' in url
     res = asyncio.run(run(url, outdir, lambda l: l and l.endswith('.mp3'), link_twice=link_twice))

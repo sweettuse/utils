@@ -1,11 +1,10 @@
 import random
 from contextlib import suppress
 from io import BytesIO
-from itertools import chain
 from typing import Union, List, NamedTuple, Optional
-from more_itertools import interleave
 
 from google.cloud import speech, texttospeech as tts, translate
+
 from utils.core import play_sound
 
 __author__ = 'acushner'
@@ -15,7 +14,8 @@ _stt_client = speech.SpeechClient()
 _translate_client = translate.Client()
 
 
-def ssmlify_text(text):
+def _ssmlify_text(text):
+    text = text.replace(',', '<break strength="weak"/>')
     if text.startswith('<speak>'):
         return text
     return f'<speak>{text}</speak>'
@@ -24,7 +24,7 @@ def ssmlify_text(text):
 def text_to_speech(text: str, encoding=_tts_client.enums.AudioEncoding.MP3, language_code='en-US',
                    voice_name='en-US-Wavenet-E', pitch=2, speaking_rate=1) -> bytes:
     """hit google's text-to-speech API"""
-    si = tts.types.SynthesisInput(ssml=ssmlify_text(text))
+    si = tts.types.SynthesisInput(ssml=_ssmlify_text(text))
     audio_conf = tts.types.AudioConfig(audio_encoding=encoding, pitch=pitch, speaking_rate=speaking_rate)
     voice = tts.types.VoiceSelectionParams(language_code=language_code, name=voice_name, ssml_gender='FEMALE')
     return _tts_client.synthesize_speech(si, voice, audio_conf).audio_content
@@ -54,7 +54,7 @@ def _parse_stt_res(res):
         transcript = transcript.split(maxsplit=1)[1]
     with suppress(Exception):
         confidence = float(confidence.split(maxsplit=1)[1])
-    return transcript, confidence
+    return transcript.replace('"', ''), confidence
 
 
 class TranslationRes(NamedTuple):
@@ -130,18 +130,18 @@ def _stt():
 
 
 def __main():
-    return _stt()
+    # return _stt()
     # t = _translate_client.get_languages()
     # translate_simpsons_quotes()
     t = '<speak>to help you remain tranquil in the face of almost-certain death, smooth jazz will be deployed in ' \
         '3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
     # t = 'ready to have your face trained? look at me and smile. keep looking at me until the music stops playing'
     # t = '<speak>starting in 3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
-    t = "now that i recognize you, i'll be seeing you around!"
+    t = "hi there!<break strength=\"weak\"/> misty is my old name<break strength=\"weak\"/>, i'm actually called co-pi-lette<break strength=\"weak\"/> and i'd like to learn your face!"
     suffix = 'wav'
     r = text_to_speech(t, suffix_type_dict[suffix])
     play_sound(r)
-    with open(f'/tmp/see_you_around.{suffix}', 'wb') as f:
+    with open(f'/tmp/face_train_intro.{suffix}', 'wb') as f:
         f.write(r)
     # print([l for l in t if 'span' in l['name'].lower()])
     # t = t

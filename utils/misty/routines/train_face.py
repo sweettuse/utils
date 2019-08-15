@@ -3,25 +3,36 @@ from asyncio import gather
 from random import choice
 from uuid import uuid4
 
-from misty_py.api import MistyAPI, MISTY_URL, RGB
+from misty_py.api import MistyAPI, RGB
 from misty_py.utils import async_run
+
+from utils.ggl.ggl_async import aspeech_to_text, atext_to_speech
+from utils.misty.core import named_temp_file
+from utils.misty.routines.audio import Mood, sounds
 
 __author__ = 'acushner'
 
-api = MistyAPI(MISTY_URL)
+api = MistyAPI()
 
-_intro_images = ['DefaultEyes_Joy.jpg']
+_intro_images = ['e_Joy.jpg']
 _intro_prompts = ['face_train_intro.wav']
 _train_prompts = [f'face_training_time{i}.wav' for i in range(1, 4)]
 _train_instructions = ['face_training_inst.wav']
 _alright = ['alright.wav', 'alrighty_then.wav', 'ok.wav', 'ok_then.wav']
-_music_options = ['studiopolis_short.mp3', 'smooth_jazz_is_being_deployed.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
+_music_options = ['studiopolis_short.mp3', 'smooth_jazz.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
 _thanks = ['thank_you.wav', 'great.wav']
-_random = ['001-EeeeeeE.wav', '001-OooOooo.wav', '002-Growl-01.wav', '002-Weerp.wav', '003-UmmMmmUmm.wav',
-           '003-Waaa.wav', '004-Ahhhh.wav', '005-EeeeeeE-02.wav', '005-Eurra.wav', '005-OoAhhh.wav']
+_random = sounds[Mood.relaxed]
 _done_sounds = ['tada_win31.mp3']
 _pic_prompts = ['smile_for_the_camera.wav', 'lets_take_picture.wav']
+_pic_prompts = ['lets_take_picture.wav']
 _shutter_click = [f'camera_shutter_click_{i}.wav' for i in range(1, 4)]
+_face_eyes = ['e_ContentLeft.jpg', 'e_ContentRight.jpg']
+
+
+async def _test_music():
+    for m in _intro_prompts:
+        print(m)
+        await api.audio.play(m, how_long_secs=4, blocking=True)
 
 
 class UID:
@@ -41,17 +52,21 @@ class UID:
     def audio(self):
         return f'{self.uid}.wav'
 
+    @property
+    def misty_audio(self):
+        return f'{self.uid}_misty.wav'
+
     def __str__(self):
         return self.uid
 
 
 async def _intro():
+    await api.audio.play(choice(_random), blocking=True)
     await gather(
         api.images.set_led(RGB(0, 255, 0)),
         api.images.display(choice(_intro_images)),
-        api.audio.play(choice(_alright), blocking=True)
+        api.audio.play(choice(_intro_prompts), blocking=True)
     )
-    await api.audio.play(choice(_intro_prompts), blocking=True)
     await api.images.set_led()
 
 
@@ -59,19 +74,39 @@ async def _get_name(uid: UID, record_time=4):
     await api.audio.play('first.wav', blocking=True)
     await api.audio.play('face_train_prompt_name.wav', blocking=True)
     await gather(
-        api.images.set_led(RGB(255, 255, 0)),
-        api.audio.start_recording(uid.audio, record_time),
-        asyncio.sleep(record_time)
+        # api.images.set_led(RGB(255, 255, 0)),
+        api.audio.record(uid.audio, how_long_secs=record_time, blocking=True),
     )
     await api.audio.play(choice(_thanks), blocking=True)
     await api.images.set_led()
+    asyncio.create_task(_convert_to_misty_speech(uid))
+    print(uid.misty_audio)
+
+
+async def _upload_audio_bytes(name, audio):
+    with named_temp_file(name) as f:
+        f.write(audio)
+        await api.audio.upload(f.name)
+
+
+async def _convert_to_misty_speech(uid: UID):
+    try:
+        human_audio = await api.audio.get(uid.audio)
+        with open('/tmp/stt.wav', 'wb') as f:
+            f.write(human_audio.read())
+        text, confidence = await aspeech_to_text(human_audio)
+        misty_audio = await atext_to_speech(text)
+        await _upload_audio_bytes(uid.misty_audio, misty_audio)
+    except Exception as e:
+        print('ERROR', e)
 
 
 async def _take_picture(uid: UID):
+    await api.audio.play('next.wav', blocking=True)
     await api.audio.play(choice(_pic_prompts), blocking=True)
     await gather(
         api.audio.play('321.mp3', blocking=True),
-        api.images.display('DefaultEyes_SystemCamera.jpg')
+        api.images.display('e_SystemCamera.jpg')
     )
     await gather(
         api.images.take_picture(uid.image),
@@ -81,6 +116,9 @@ async def _take_picture(uid: UID):
 
 
 async def _train(uid: UID):
+    # put in new eyes here
+    await api.images.display(choice(_face_eyes))
+    await api.audio.play('finally.wav', blocking=True)
     await api.audio.play(choice(_train_prompts), blocking=True)
     await api.audio.play(choice(_train_instructions), blocking=True)
     await gather(
@@ -91,15 +129,16 @@ async def _train(uid: UID):
     await gather(
         api.images.set_led(RGB(0, 255, 0)),
         api.audio.play('tada_win31.mp3', blocking=True),
-        api.images.display('DefaultEyes_Amazement.jpg')
+        api.images.display('e_Amazement.jpg')
     )
     await api.audio.play(choice(_thanks), blocking=True)
+    await api.audio.play(uid.misty_audio, blocking=True)
     await api.audio.play('see_you_around.wav', blocking=True)
 
 
 async def _done():
     await gather(
-        api.images.display('DefaultEyes_DefaultContent.jpg'),
+        api.images.display('e_DefaultContent.jpg'),
         api.images.set_led()
     )
 
@@ -116,7 +155,7 @@ async def train_face():
     - ultimately a simple website with form to add cool things about the person?
     - flask server to automatically associate names with faces?
     """
-    await api.audio.wait_for_key_phrase()
+    # await api.audio.wait_for_key_phrase()
     await _intro()
     uid = UID('ftuid')
     print(str(uid))
@@ -127,8 +166,14 @@ async def train_face():
 
 
 def __main():
+    # async_run(_test_music())
     async_run(train_face())
 
 
 if __name__ == '__main__':
     __main()
+
+    # starts with alrighty then - remove
+    # let's take a pic too abrupt'
+    # too abrupt for face training time
+    # crappy names fail the thing
