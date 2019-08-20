@@ -63,11 +63,13 @@ async def get_actuator_positions() -> Dict[Actuator, float]:
 
     async def _wait_one(sp: SubPayload):
         nonlocal expected_sub_ids
+        if not submitted:
+            return False
         expected_sub_ids -= {sp.sub_id}
         with suppress(Exception):
             res[sp.sub_id.sub] = sp.data.message.value
         await sp.sub_id.unsubscribe()
-        return submitted and not expected_sub_ids
+        return not expected_sub_ids
 
     ecb = EventCallback(_wait_one)
 
@@ -79,8 +81,8 @@ async def get_actuator_positions() -> Dict[Actuator, float]:
 
 
 def __main():
-    print(asyncio.run(get_actuator_positions()))
-    # async_run(say("hey philip, how's it going?"))
+    # print(asyncio.run(get_actuator_positions()))
+    asyncio.run(say("hey philip, how's it going?"))
 
 
 if __name__ == '__main__':

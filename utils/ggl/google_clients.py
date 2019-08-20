@@ -130,6 +130,7 @@ def _stt():
 
 
 def __main():
+    speech_to_text('/tmp/stt.wav')
     # return _stt()
     # t = _translate_client.get_languages()
     # translate_simpsons_quotes()

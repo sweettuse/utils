@@ -1,4 +1,5 @@
 import asyncio
+import os
 from asyncio import gather
 from random import choice
 from uuid import uuid4
@@ -6,6 +7,7 @@ from uuid import uuid4
 from misty_py.api import MistyAPI, RGB
 from misty_py.utils import async_run
 
+from utils.core import play_sound
 from utils.ggl.ggl_async import aspeech_to_text, atext_to_speech
 from utils.misty.core import named_temp_file
 from utils.misty.routines.audio import Mood, sounds
@@ -19,7 +21,7 @@ _intro_prompts = ['face_train_intro.wav']
 _train_prompts = [f'face_training_time{i}.wav' for i in range(1, 4)]
 _train_instructions = ['face_training_inst.wav']
 _alright = ['alright.wav', 'alrighty_then.wav', 'ok.wav', 'ok_then.wav']
-_music_options = ['studiopolis_short.mp3', 'smooth_jazz.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
+_music_options = ['studiopolis_short.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
 _thanks = ['thank_you.wav', 'great.wav']
 _random = sounds[Mood.relaxed]
 _done_sounds = ['tada_win31.mp3']
@@ -53,7 +55,7 @@ class UID:
         return f'{self.uid}.wav'
 
     @property
-    def misty_audio(self):
+    def audio_misty(self):
         return f'{self.uid}_misty.wav'
 
     def __str__(self):
@@ -70,17 +72,23 @@ async def _intro():
     await api.images.set_led()
 
 
+async def _record(uid, record_time):
+    await api.audio.record(uid.audio, how_long_secs=record_time, blocking=True),
+
+
 async def _get_name(uid: UID, record_time=4):
     await api.audio.play('first.wav', blocking=True)
     await api.audio.play('face_train_prompt_name.wav', blocking=True)
     await gather(
-        # api.images.set_led(RGB(255, 255, 0)),
-        api.audio.record(uid.audio, how_long_secs=record_time, blocking=True),
+        api.images.set_led(RGB(255, 255, 0)),
+        _record(uid, record_time)
     )
     await api.audio.play(choice(_thanks), blocking=True)
     await api.images.set_led()
-    asyncio.create_task(_convert_to_misty_speech(uid))
-    print(uid.misty_audio)
+    print(uid.audio)
+
+    # return asyncio.create_task(_convert_to_misty_speech(uid))
+    # await _convert_to_misty_speech(uid)
 
 
 async def _upload_audio_bytes(name, audio):
@@ -91,12 +99,10 @@ async def _upload_audio_bytes(name, audio):
 
 async def _convert_to_misty_speech(uid: UID):
     try:
-        human_audio = await api.audio.get(uid.audio)
-        with open('/tmp/stt.wav', 'wb') as f:
-            f.write(human_audio.read())
+        human_audio = await api.audio.get(uid.audio, '/tmp/stt.wav')
         text, confidence = await aspeech_to_text(human_audio)
         misty_audio = await atext_to_speech(text)
-        await _upload_audio_bytes(uid.misty_audio, misty_audio)
+        await _upload_audio_bytes(uid.audio_misty, misty_audio)
     except Exception as e:
         print('ERROR', e)
 
@@ -132,7 +138,7 @@ async def _train(uid: UID):
         api.images.display('e_Amazement.jpg')
     )
     await api.audio.play(choice(_thanks), blocking=True)
-    await api.audio.play(uid.misty_audio, blocking=True)
+    await api.audio.play(uid.audio_misty, blocking=True)
     await api.audio.play('see_you_around.wav', blocking=True)
 
 
@@ -156,12 +162,17 @@ async def train_face():
     - flask server to automatically associate names with faces?
     """
     # await api.audio.wait_for_key_phrase()
-    await _intro()
+    # await _intro()
     uid = UID('ftuid')
     print(str(uid))
-    await _get_name(uid)
-    await _take_picture(uid)
-    await _train(uid)
+    await _record(uid, 4)
+    await api.audio.get(uid.audio, '/tmp/a.wav')
+    play_sound('/tmp/a.wav')
+    # t = await _get_name(uid)
+    # await _take_picture(uid)
+    # await _train(uid)
+    # await t
+    # await api.audio.play(uid.audio_misty)
     await _done()
 
 
