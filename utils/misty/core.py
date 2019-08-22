@@ -10,8 +10,6 @@ from misty_py.api import MistyAPI
 from misty_py.misty_ws import EventCallback
 from misty_py.subscriptions import SubType, Sub, SubPayload, Actuator
 
-from utils.ggl.google_clients import text_to_speech
-
 uvloop.install()
 
 api = MistyAPI()
@@ -43,16 +41,6 @@ def named_temp_file(name):
             os.remove(f.name)
 
 
-async def say(s):
-    clip = await run_in_executor(text_to_speech, s)
-    with named_temp_file('from_google.mp3') as f:
-        f.write(clip)
-        await api.audio.upload(f.name)
-        print('done1')
-    await api.audio.play('from_google.mp3')
-    print('done')
-
-
 def first(v):
     return next(iter(v))
 
@@ -81,8 +69,9 @@ async def get_actuator_positions() -> Dict[Actuator, float]:
 
 
 def __main():
+    pass
     # print(asyncio.run(get_actuator_positions()))
-    asyncio.run(say("hey philip, how's it going?"))
+    # asyncio.run(say("hey philip, how's it going?"))
 
 
 if __name__ == '__main__':

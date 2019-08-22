@@ -7,7 +7,7 @@ from typing import Callable, Awaitable
 from misty_py.api import MistyAPI, wait_in_order
 from random import random
 
-from misty_py.utils import asyncpartial
+from misty_py.utils import asyncpartial, wait_for_group
 
 __author__ = 'acushner'
 api = MistyAPI()
@@ -44,9 +44,11 @@ async def move_arms(l_max=50, r_max=50, velocity=60, n_times=6):
     await _run_n(_move, n_times)
 
 
-@asynccontextmanager
-async def reset_pos_to_orig():
-    pass
+async def animate(n_times=100):
+    async def _helper():
+        async with api.movement.reset_to_orig():
+            await wait_for_group(move_arms(n_times=n_times), move_head(n_times=n_times))
+    return await _helper()
 
 
 async def nod(pitch=40, roll=None, yaw=None, velocity=100, n_times=6):

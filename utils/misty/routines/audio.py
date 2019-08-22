@@ -1,10 +1,12 @@
 from enum import Enum
 from random import choice
 
-from misty_py.api import MistyAPI
+from utils.misty.core import named_temp_file, api
+from utils.ggl.ggl_async import atext_to_speech
+
+# from utils.ggl.google_clients import text_to_speech
 
 __author__ = 'acushner'
-api = MistyAPI()
 
 
 class Mood(Enum):
@@ -43,6 +45,14 @@ async def random_sound(mood=None):
     fn = choice(sounds[mood])
     print('playing:', mood, fn)
     await api.audio.play(fn)
+
+
+async def say(s):
+    clip = await atext_to_speech(s)
+    with named_temp_file('from_google.mp3') as f:
+        f.write(clip)
+        await api.audio.upload(f.name)
+    await api.audio.play('from_google.mp3', blocking=True)
 
 
 def __main():

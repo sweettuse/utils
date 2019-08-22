@@ -22,6 +22,29 @@ _train_prompts = [f'face_training_time{i}.wav' for i in range(1, 4)]
 _train_instructions = ['face_training_inst.wav']
 _alright = ['alright.wav', 'alrighty_then.wav', 'ok.wav', 'ok_then.wav']
 _music_options = ['studiopolis_short.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
+_music_options += [
+    'central_park_sunday.mp3',
+    '3-24 Jump Up, Super Star! Music Box Version.mp3',
+    'moon_remastered.mp3',
+    'messenger_howling_grotto.mp3',
+    '02 Overworld.mp3',
+    'iitr_song_of_storms.mp3',
+    '1-09 Fossil Falls.mp3',
+    '13 - Baby Universe.mp3',
+    '1-17 Gusty Garden Galaxy.mp3',
+    '3-26 Jump Up, Super Star!.mp3',
+    '2-36 Password.mp3',
+    '01 nananan katamari.mp3',
+    'iirt_aquatic_ruin_zone.mp3',
+    'mk7_credits.mp3',
+    '06 lonely rolling star.mp3',
+]
+_music_options += [
+    'lizzo_juice.mp3',
+    'pomplamoose_jamiroquai.mp3',
+    'pomplamoose_waiting_line.mp3',
+    'pomplamoose_radiohead.mp3',
+]
 _thanks = ['thank_you.wav', 'great.wav']
 _random = sounds[Mood.relaxed]
 _done_sounds = ['tada_win31.mp3']
@@ -32,7 +55,7 @@ _face_eyes = ['e_ContentLeft.jpg', 'e_ContentRight.jpg']
 
 
 async def _test_music():
-    for m in _intro_prompts:
+    for m in _music_options:
         print(m)
         await api.audio.play(m, how_long_secs=4, blocking=True)
 
@@ -177,8 +200,9 @@ async def train_face():
 
 
 def __main():
+    asyncio.run(api.audio.play('lizzo_juice.mp3'))
     # async_run(_test_music())
-    async_run(train_face())
+    # async_run(train_face())
 
 
 if __name__ == '__main__':

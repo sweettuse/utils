@@ -1,6 +1,7 @@
 - [ ] grab seats from database and say hello in all languages
 - [x] create a keyboard reader
 - [ ] youtube to mp3: https://mp3converter.to
+- [ ] text doc of all things to say at WIT
 
 
 

@@ -1,4 +1,5 @@
 import random
+import re
 from contextlib import suppress
 from io import BytesIO
 from typing import Union, List, NamedTuple, Optional
@@ -15,7 +16,7 @@ _translate_client = translate.Client()
 
 
 def _ssmlify_text(text):
-    text = text.replace(',', '<break strength="weak"/>')
+    text = '<break strength="weak"/>'.join(re.split('[:;,!.-]', text))
     if text.startswith('<speak>'):
         return text
     return f'<speak>{text}</speak>'

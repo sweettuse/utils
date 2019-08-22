@@ -76,33 +76,33 @@ def _get_head_chords():
     yaw: turn left and right
     """
 
-    def _create_head_func(**kwargs):
-        return OnOff(lambda: api.movement.move_head(**kwargs), Commands.nothing.off, MistyChordGroup.head)
+    def _create_head_func(increment=True, **kwargs):
+        return OnOff(lambda: api.movement.move_head(increment=increment, **kwargs), Commands.nothing.off, MistyChordGroup.head)
 
     chords = Chords()
-    chords[Key.up,] = _create_head_func(pitch=50)
-    chords[Key.down,] = _create_head_func(pitch=-50)
-    chords[Key.left,] = _create_head_func(yaw=-50)
-    chords[Key.right,] = _create_head_func(yaw=50)
-    chords[Key.up, Key.left] = _create_head_func(roll=-50)
-    chords[Key.up, Key.right] = _create_head_func(roll=50)
-    chords[Key.space,] = _create_head_func(pitch=0, roll=0, yaw=0)
+    chords[Key.up,] = _create_head_func(pitch=15)
+    chords[Key.down,] = _create_head_func(pitch=-15)
+    chords[Key.left,] = _create_head_func(yaw=-15)
+    chords[Key.right,] = _create_head_func(yaw=15)
+    chords[Key.up, Key.left] = _create_head_func(roll=-15)
+    chords[Key.up, Key.right] = _create_head_func(roll=15)
+    chords[Key.space,] = _create_head_func(False, pitch=0, roll=0, yaw=0)
     return chords
 
 
 def _get_arms_chords():
-    def _create_arms_func(pos, vel, *directions):
+    def _create_arms_func(pos, vel, *directions, increment=True):
         kwargs = ChainMap(*({f'{d}_position': pos, f'{d}_velocity': vel} for d in directions))
-        return OnOff(lambda: api.movement.move_arms(**kwargs), Commands.nothing.off, MistyChordGroup.arms)
+        return OnOff(lambda: api.movement.move_arms(increment=increment, **kwargs), Commands.nothing.off, MistyChordGroup.arms)
 
     chords = Chords()
-    chords[Key.up,] = _create_arms_func(50, 50, *'lr')
-    chords[Key.down,] = _create_arms_func(-50, -50, *'lr')
-    chords[Key.left, Key.up,] = _create_arms_func(50, 50, 'l')
-    chords[Key.left, Key.down,] = _create_arms_func(-50, -50, 'l')
-    chords[Key.right, Key.up,] = _create_arms_func(50, 50, 'r')
-    chords[Key.right, Key.down,] = _create_arms_func(-50, -50, 'r')
-    chords[Key.space,] = _create_arms_func(0, 0, *'lr')
+    chords[Key.up,] = _create_arms_func(15, 15, *'lr')
+    chords[Key.down,] = _create_arms_func(-15, -15, *'lr')
+    chords[Key.left, Key.up,] = _create_arms_func(15, 15, 'l')
+    chords[Key.left, Key.down,] = _create_arms_func(-15, -15, 'l')
+    chords[Key.right, Key.up,] = _create_arms_func(15, 15, 'r')
+    chords[Key.right, Key.down,] = _create_arms_func(-15, -15, 'r')
+    chords[Key.space,] = _create_arms_func(0, 0, *'lr', increment=False)
     return chords
 
 

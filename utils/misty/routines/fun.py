@@ -124,7 +124,6 @@ async def eyes_wont_set():
 
 
 def __main():
-    asyncio.run(smooth_jazz())
     pass
 
 
