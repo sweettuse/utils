@@ -1,6 +1,7 @@
 import random
 import re
 from contextlib import suppress
+from enum import Enum
 from io import BytesIO
 from typing import Union, List, NamedTuple, Optional
 
@@ -16,19 +17,27 @@ _translate_client = translate.Client()
 
 
 def _ssmlify_text(text):
-    text = '<break strength="weak"/>'.join(re.split('[:;,!.-]', text))
+    text = '<break strength="weak"/>'.join(re.split('[:;,!.]', text))
     if text.startswith('<speak>'):
         return text
     return f'<speak>{text}</speak>'
 
 
+class AudioEncoding(Enum):
+    mp3 = _tts_client.enums.AudioEncoding.MP3
+    wav = _tts_client.enums.AudioEncoding.LINEAR16
+
+
 def text_to_speech(text: str, encoding=_tts_client.enums.AudioEncoding.MP3, language_code='en-US',
                    voice_name='en-US-Wavenet-E', pitch=2, speaking_rate=1) -> bytes:
     """hit google's text-to-speech API"""
+    if isinstance(encoding, AudioEncoding):
+        encoding = encoding.value
     si = tts.types.SynthesisInput(ssml=_ssmlify_text(text))
     audio_conf = tts.types.AudioConfig(audio_encoding=encoding, pitch=pitch, speaking_rate=speaking_rate)
     voice = tts.types.VoiceSelectionParams(language_code=language_code, name=voice_name, ssml_gender='FEMALE')
-    return _tts_client.synthesize_speech(si, voice, audio_conf).audio_content
+    res = _tts_client.synthesize_speech(si, voice, audio_conf)
+    return res.audio_content
 
 
 def speech_to_text(file_or_path: Union[bytes, BytesIO, str]):
@@ -131,7 +140,8 @@ def _stt():
 
 
 def __main():
-    speech_to_text('/tmp/stt.wav')
+    text_to_speech('anchovy')
+    # speech_to_text('/tmp/stt.wav')
     # return _stt()
     # t = _translate_client.get_languages()
     # translate_simpsons_quotes()

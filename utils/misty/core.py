@@ -3,12 +3,17 @@ import os
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from functools import partial, wraps
+from itertools import count
 from typing import Dict, Callable, Awaitable, Any
 
 import uvloop
-from misty_py.api import MistyAPI
+from misty_py.api import MistyAPI, json_obj
 from misty_py.misty_ws import EventCallback
 from misty_py.subscriptions import SubType, Sub, SubPayload, Actuator
+from misty_py.utils import wait_in_order
+from more_itertools import always_iterable
+
+from utils.ggl.google_clients import AudioEncoding
 
 uvloop.install()
 
@@ -32,9 +37,9 @@ def make_async(func):
 
 
 @contextmanager
-def named_temp_file(name):
+def named_temp_file(name, perms='wb'):
     try:
-        with open(f'/tmp/{name}', 'wb') as f:
+        with open(f'/tmp/{name}', perms) as f:
             yield f
     finally:
         with suppress(Exception):
@@ -50,6 +55,47 @@ async def repeat(coro: Callable[[], Awaitable[Any]], wait_secs=0):
         await coro()
         if wait_secs > 0:
             await asyncio.sleep(wait_secs)
+
+
+class Routine(json_obj):
+    """used to programmatically store and create audio for various routines"""
+
+    def __new__(cls, *args, **kwargs):
+        return dict.__new__(cls)
+
+    def __init__(self, routine_prefix):
+        super().__init__()
+        self.routine_prefix = routine_prefix
+
+    def generate(self, *keys):
+        asyncio.run(self._generate(*keys))
+
+    async def _generate(self, *keys):
+        """go to google, generate audio, and upload to misty"""
+        from utils.ggl.ggl_async import atext_to_speech
+        filenames = self.get_filenames(*keys)
+        coros = (atext_to_speech(s, AudioEncoding.wav) for s in filenames.values())
+        out = dict(zip(filenames, await asyncio.gather(*coros, return_exceptions=True)))
+        coros = (self._upload(fn, data) for fn, data in out.items())
+        res = await wait_in_order(*coros)
+        return {r for r in res if r}
+
+    @staticmethod
+    async def _upload(fn, data):
+        if isinstance(data, Exception):
+            return fn
+        await api.audio.upload(fn, data=data)
+
+    @staticmethod
+    def _to_misty():
+        pass
+
+    def get_filenames(self, *keys) -> Dict[str, str]:
+        keys = (set(keys) or set(self)) - {'routine_prefix'}
+        prefix = f'{self.routine_prefix}_' if self.routine_prefix else ''
+        return {f'{prefix}{name}_{n}.wav': sentence
+                for name in keys
+                for n, sentence in zip(count(), always_iterable(self[name]))}
 
 
 def __main():

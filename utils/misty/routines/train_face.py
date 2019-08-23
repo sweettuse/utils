@@ -5,7 +5,7 @@ from random import choice
 from uuid import uuid4
 
 from misty_py.api import MistyAPI, RGB
-from misty_py.utils import async_run
+from misty_py.utils import async_run, wait_in_order
 
 from utils.core import play_sound
 from utils.ggl.ggl_async import aspeech_to_text, atext_to_speech
@@ -100,17 +100,18 @@ async def _record(uid, record_time):
 
 
 async def _get_name(uid: UID, record_time=4):
-    await api.audio.play('first.wav', blocking=True)
-    await api.audio.play('face_train_prompt_name.wav', blocking=True)
-    await gather(
+    await wait_in_order(
+        api.audio.play('first.wav', blocking=True),
+        api.audio.play('face_train_prompt_name.wav', blocking=True),
         api.images.set_led(RGB(255, 255, 0)),
-        _record(uid, record_time)
+        _record(uid, record_time),
+        api.images.set_led(),
+        api.audio.play(choice(_thanks), blocking=True),
     )
-    await api.audio.play(choice(_thanks), blocking=True)
-    await api.images.set_led()
+    t = asyncio.create_task(_convert_to_misty_speech(uid))
     print(uid.audio)
+    return t
 
-    # return asyncio.create_task(_convert_to_misty_speech(uid))
     # await _convert_to_misty_speech(uid)
 
 
@@ -185,24 +186,21 @@ async def train_face():
     - flask server to automatically associate names with faces?
     """
     # await api.audio.wait_for_key_phrase()
-    # await _intro()
+    await _intro()
     uid = UID('ftuid')
     print(str(uid))
-    await _record(uid, 4)
     await api.audio.get(uid.audio, '/tmp/a.wav')
-    play_sound('/tmp/a.wav')
-    # t = await _get_name(uid)
-    # await _take_picture(uid)
-    # await _train(uid)
-    # await t
-    # await api.audio.play(uid.audio_misty)
+    t = await _get_name(uid)
+    await _take_picture(uid)
+    await _train(uid)
+    await api.audio.play(uid.audio_misty)
     await _done()
 
 
 def __main():
-    asyncio.run(api.audio.play('lizzo_juice.mp3'))
+    # asyncio.run(api.audio.play('lizzo_juice.mp3'))
     # async_run(_test_music())
-    # async_run(train_face())
+    async_run(train_face())
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ from enum import Enum
 from random import choice
 from typing import Optional
 
+from utils.ggl.google_clients import AudioEncoding
 from utils.misty.core import named_temp_file, api
 from utils.ggl.ggl_async import atext_to_speech
 
@@ -51,14 +52,15 @@ async def random_sound(mood=None, blocking=True):
 
 
 async def say(s, after_upload: Optional[Coroutine] = None):
-    clip = await atext_to_speech(s)
-    with named_temp_file('from_google.mp3') as f:
+    clip = await atext_to_speech(s, AudioEncoding.wav)
+    fn = 'from_google.wav'
+    with named_temp_file(fn) as f:
         f.write(clip)
         await api.audio.upload(f.name)
     t = None
     if after_upload:
         t = asyncio.create_task(after_upload)
-    await api.audio.play('from_google.mp3', blocking=True)
+    await api.audio.play(fn, blocking=True)
     return t
 
 

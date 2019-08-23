@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import suppress
 
+import silly
 from misty_py.utils import wait_in_order, wait_for_group, asyncpartial, wait_first, async_run
 
 from utils.colors.colors import Colors
@@ -63,8 +64,14 @@ async def go_ham(how_long_secs=3):
         )
 
 
+async def lets_get_silly():
+    adj = silly.adjective()
+    print(adj)
+    await talk(adj)
+
+
 def __main():
-    async_run(go_ham(6))
+    async_run(lets_get_silly())
     # asyncio.run(talk('i am the jebtuse! how are you today?'))
 
 
