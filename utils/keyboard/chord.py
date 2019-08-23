@@ -94,7 +94,7 @@ async def parse_state(state_chords: StateChords, debounce_s: int = .04):
     try:
         async for state, keys in parser.read_chars():
             print(80 * '=')
-            print()
+            print(keys)
             if prev_state != state:
                 print('  OFF:', await prev.off())
             prev_state = state

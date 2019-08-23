@@ -45,10 +45,8 @@ async def move_arms(l_max=50, r_max=50, velocity=60, n_times=6):
 
 
 async def animate(n_times=100):
-    async def _helper():
-        async with api.movement.reset_to_orig():
-            await wait_for_group(move_arms(n_times=n_times), move_head(n_times=n_times))
-    return await _helper()
+    async with api.movement.reset_to_orig(velocity=100):
+        await wait_for_group(move_arms(n_times=n_times), move_head(n_times=n_times))
 
 
 async def nod(pitch=40, roll=None, yaw=None, velocity=100, n_times=6):

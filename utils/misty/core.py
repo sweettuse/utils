@@ -3,7 +3,7 @@ import os
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from functools import partial, wraps
-from typing import Dict
+from typing import Dict, Callable, Awaitable, Any
 
 import uvloop
 from misty_py.api import MistyAPI
@@ -45,27 +45,11 @@ def first(v):
     return next(iter(v))
 
 
-async def get_actuator_positions() -> Dict[Actuator, float]:
-    res: Dict[Sub, float] = {}
-    submitted = False
-
-    async def _wait_one(sp: SubPayload):
-        nonlocal expected_sub_ids
-        if not submitted:
-            return False
-        expected_sub_ids -= {sp.sub_id}
-        with suppress(Exception):
-            res[sp.sub_id.sub] = sp.data.message.value
-        await sp.sub_id.unsubscribe()
-        return not expected_sub_ids
-
-    ecb = EventCallback(_wait_one)
-
-    expected_sub_ids = set(await api.ws.subscribe(SubType.actuator_position, ecb))
-    submitted = True
-    await ecb
-
-    return {Actuator(first(sub.ec).value): v for sub, v in res.items()}
+async def repeat(coro: Callable[[], Awaitable[Any]], wait_secs=0):
+    while True:
+        await coro()
+        if wait_secs > 0:
+            await asyncio.sleep(wait_secs)
 
 
 def __main():

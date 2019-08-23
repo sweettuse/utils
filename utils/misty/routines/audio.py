@@ -1,5 +1,8 @@
+import asyncio
+from collections import Coroutine
 from enum import Enum
 from random import choice
+from typing import Optional
 
 from utils.misty.core import named_temp_file, api
 from utils.ggl.ggl_async import atext_to_speech
@@ -18,7 +21,7 @@ class Mood(Enum):
     terror = 'terror'
     sounds = 'sounds'
     relaxed = 'relaxed'
-    alarmed = 'alarmed'
+    # alarmed = 'alarmed'
 
 
 sounds = {
@@ -40,19 +43,23 @@ async def play_mood(mood):
         await api.audio.play(fn, blocking=True)
 
 
-async def random_sound(mood=None):
+async def random_sound(mood=None, blocking=True):
     mood = mood or choice(list(Mood))
     fn = choice(sounds[mood])
     print('playing:', mood, fn)
-    await api.audio.play(fn)
+    await api.audio.play(fn, blocking=blocking)
 
 
-async def say(s):
+async def say(s, after_upload: Optional[Coroutine] = None):
     clip = await atext_to_speech(s)
     with named_temp_file('from_google.mp3') as f:
         f.write(clip)
         await api.audio.upload(f.name)
+    t = None
+    if after_upload:
+        t = asyncio.create_task(after_upload)
     await api.audio.play('from_google.mp3', blocking=True)
+    return t
 
 
 def __main():
