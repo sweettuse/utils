@@ -65,6 +65,7 @@ async def say(s, after_upload: Optional[Coroutine] = None):
 
 
 def __main():
+    asyncio.run(play_mood(Mood.love))
     pass
 
 

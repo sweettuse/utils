@@ -83,7 +83,7 @@ class LangInfo(NamedTuple):
         return cls(data['language'], data['name'])
 
 
-def _translate(data: Union[str, List[str]], target_language: str, source_language: str = 'en') -> TranslationRes:
+def translate(data: Union[str, List[str]], target_language: str, source_language: str = 'en') -> TranslationRes:
     res = _translate_client.translate(data, target_language=target_language, source_language=source_language)
     return TranslationRes(res['translatedText'], target_language, data, source_language)
 
@@ -103,11 +103,11 @@ def the_google_shuffle(data, n_translations: Optional[int] = 6, source_language=
         if source == target:
             continue
         print(source, '-->', target, end=': ')
-        trans = _translate(data, target, source)
+        trans = translate(data, target, source)
         if show_intermediate_results:
             if target != source_language:
                 # translate intermediate steps back to source
-                to_source = _translate(trans.translation, target_language=source_language, source_language=target)
+                to_source = translate(trans.translation, target_language=source_language, source_language=target)
                 print(to_source.translation)
             else:
                 print(trans.translation)
@@ -134,13 +134,31 @@ suffix_type_dict = dict(mp3=_tts_client.enums.AudioEncoding.MP3,
                         wav=_tts_client.enums.AudioEncoding.LINEAR16)
 
 
-def _stt():
-    res = speech_to_text('/tmp/ftuid_be4724e4.wav')
-    print(res)
+def detect_text(path):
+    """use OCR to detect text in the file."""
+    from google.cloud import vision
+    client = vision.ImageAnnotatorClient()
+
+    with open(path, 'rb') as image_file:
+        content = image_file.read()
+
+    image = vision.types.Image(content=content)
+
+    response = client.text_detection(image=image)
+    texts = response.text_annotations
+    print('Texts:')
+
+    for text in texts:
+        print('\n"{}"'.format(text.description))
+
+        vertices = (['({},{})'.format(vertex.x, vertex.y)
+                     for vertex in text.bounding_poly.vertices])
+
+        print('bounds: {}'.format(','.join(vertices)))
 
 
 def __main():
-    text_to_speech('anchovy')
+    # text_to_speech('anchovy')
     # speech_to_text('/tmp/stt.wav')
     # return _stt()
     # t = _translate_client.get_languages()
@@ -149,6 +167,8 @@ def __main():
         '3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
     # t = 'ready to have your face trained? look at me and smile. keep looking at me until the music stops playing'
     # t = '<speak>starting in 3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
+    detect_text('/tmp/nalgene.jpg')
+    return
     t = "hi there!<break strength=\"weak\"/> misty is my old name<break strength=\"weak\"/>, i'm actually called co-pi-lette<break strength=\"weak\"/> and i'd like to learn your face!"
     suffix = 'wav'
     r = text_to_speech(t, suffix_type_dict[suffix])
@@ -157,9 +177,9 @@ def __main():
         f.write(r)
     # print([l for l in t if 'span' in l['name'].lower()])
     # t = t
-    # print(_translate('my god, tatiana you are such a beauty!', 'es'))
+    # print(translate('my god, tatiana you are such a beauty!', 'es'))
 
-    # res = _translate('i am the very model of the modern major general', 'fr')
+    # res = translate('i am the very model of the modern major general', 'fr')
     # source = "a pet fanatic who lives like there’s no tomorrow"
     # res = the_google_shuffle(source, n_translations=6)
     # res = speech_to_text('/tmp/ggl_test_mono.wav')

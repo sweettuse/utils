@@ -12,6 +12,8 @@ from utils.ggl.ggl_async import aspeech_to_text, atext_to_speech
 from utils.misty.core import named_temp_file
 from utils.misty.routines.audio import Mood, sounds
 
+from utils.misty.routines.text.train_face import ftr
+
 __author__ = 'acushner'
 
 api = MistyAPI()
@@ -86,11 +88,10 @@ class UID:
 
 
 async def _intro():
-    await api.audio.play(choice(_random), blocking=True)
     await gather(
         api.images.set_led(RGB(0, 255, 0)),
         api.images.display(choice(_intro_images)),
-        api.audio.play(choice(_intro_prompts), blocking=True)
+        ftr.intro
     )
     await api.images.set_led()
 
@@ -102,7 +103,7 @@ async def _record(uid, record_time):
 async def _get_name(uid: UID, record_time=4):
     await wait_in_order(
         api.audio.play('first.wav', blocking=True),
-        api.audio.play('face_train_prompt_name.wav', blocking=True),
+        ftr.prompt_name,
         api.images.set_led(RGB(255, 255, 0)),
         _record(uid, record_time),
         api.images.set_led(),
@@ -116,9 +117,7 @@ async def _get_name(uid: UID, record_time=4):
 
 
 async def _upload_audio_bytes(name, audio):
-    with named_temp_file(name) as f:
-        f.write(audio)
-        await api.audio.upload(f.name)
+    await api.audio.upload(name, data=audio)
 
 
 async def _convert_to_misty_speech(uid: UID):
@@ -133,7 +132,7 @@ async def _convert_to_misty_speech(uid: UID):
 
 async def _take_picture(uid: UID):
     await api.audio.play('next.wav', blocking=True)
-    await api.audio.play(choice(_pic_prompts), blocking=True)
+    await ftr.prompt_picture
     await gather(
         api.audio.play('321.mp3', blocking=True),
         api.images.display('e_SystemCamera.jpg')
@@ -149,8 +148,8 @@ async def _train(uid: UID):
     # put in new eyes here
     await api.images.display(choice(_face_eyes))
     await api.audio.play('finally.wav', blocking=True)
-    await api.audio.play(choice(_train_prompts), blocking=True)
-    await api.audio.play(choice(_train_instructions), blocking=True)
+    await ftr.prompt_training
+    await ftr.instructions
     await gather(
         api.audio.play(choice(_music_options)),
         api.faces.wait_for_training(str(uid)),
@@ -163,7 +162,7 @@ async def _train(uid: UID):
     )
     await api.audio.play(choice(_thanks), blocking=True)
     await api.audio.play(uid.audio_misty, blocking=True)
-    await api.audio.play('see_you_around.wav', blocking=True)
+    await ftr.goodbye
 
 
 async def _done():
@@ -189,7 +188,6 @@ async def train_face():
     await _intro()
     uid = UID('ftuid')
     print(str(uid))
-    await api.audio.get(uid.audio, '/tmp/a.wav')
     t = await _get_name(uid)
     await _take_picture(uid)
     await _train(uid)
