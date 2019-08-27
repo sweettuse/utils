@@ -8,7 +8,7 @@ from typing import Callable, Awaitable, NamedTuple
 from misty_py.api import MistyAPI, wait_in_order
 from random import random
 
-from misty_py.utils import asyncpartial, wait_for_group
+from misty_py.utils import asyncpartial, wait_for_group, wait_first
 
 __author__ = 'acushner'
 api = MistyAPI()
@@ -22,8 +22,10 @@ async def _run_n(coro: Callable[[], Awaitable[None]], n_times=0, sleep_time=.4):
     """run coro `n_times` or forever"""
     r = count() if n_times <= 0 else range(n_times)
     for _ in r:
-        await coro()
-        await asyncio.sleep(sleep_time)
+        await asyncio.gather(
+            coro(),
+            asyncio.sleep(sleep_time)
+        )
 
 
 async def move_head(pitch_max=20, roll_max=20, yaw_max=20, velocity=50):

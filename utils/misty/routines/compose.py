@@ -1,8 +1,10 @@
 import asyncio
 from contextlib import suppress
+from random import choice
 
 import silly
 from misty_py.utils import wait_in_order, wait_for_group, asyncpartial, wait_first, async_run
+from more_itertools import always_iterable
 
 from utils.colors.colors import Colors
 from utils.misty.core import api, repeat, cancel
@@ -53,7 +55,11 @@ async def talk(s):
         await say(s)
 
 
-async def party_mode(how_long_secs=3, eyes=eyes, music='gandalf_sax.mp3'):
+async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
+    _music_options = ('studiopolis_short.mp3', 'gandalf_sax.mp3', 'messenger_howling_grotto.mp3',
+                      'mk7_credits.mp3', 'price_is_right.mp3')
+    music = choice(list(always_iterable(music)) or _music_options)
+    print(music)
     play = asyncpartial(api.audio.play, music, blocking=True)
     async with api.movement.reset_to_orig():
         await wait_first(
@@ -63,6 +69,7 @@ async def party_mode(how_long_secs=3, eyes=eyes, music='gandalf_sax.mp3'):
             move_head(90, 90, 90, 80),
             asyncio.sleep(how_long_secs)
         )
+    await api.images.display('e_DefaultContent.jpg')
 
 
 async def lets_get_silly():
@@ -86,7 +93,7 @@ async def play():
 
 def __main():
     # async_run(smooth_jazz())
-    async_run(party_mode(10))
+    asyncio.run(party_mode(30))
     # async_run(lets_get_sweary())
     # asyncio.run(talk('i am the jebtuse! how are you today?'))
 

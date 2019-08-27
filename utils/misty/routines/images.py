@@ -43,7 +43,7 @@ async def flash(colors: Union[RGB, List[RGB]], images: Union[str, List[str]],
             await _set(c, i, on_time_secs, True)
             await _set(RGB(0, 0, 0), i, off_time_secs, False)
     finally:
-        await _set(RGB(0, 0, 0), 'e_DefaultContent.jpg', off_time_secs, False, True)
+        await asyncio.shield(_set(RGB(0, 0, 0), 'e_DefaultContent.jpg', off_time_secs, False, True))
 
 
 def __main():

@@ -1,3 +1,4 @@
+- [ ] simple dialogue flow to determine yes or no!
 - [ ] grab seats from database and say hello in all languages
 - [x] create a keyboard reader
 - [ ] youtube to mp3: https://mp3converter.to
