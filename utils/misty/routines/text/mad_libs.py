@@ -1,14 +1,22 @@
 import asyncio
+import operator
+from contextlib import suppress
+from functools import reduce
+from itertools import count
+from random import choice
 
 import spacy
+from misty_py.utils import wait_in_order
+from more_itertools import interleave_longest, always_iterable, first
 
-from utils.misty.core import Routine
+from utils.misty.core import Routine, _TTSOption
 
 __author__ = 'acushner'
 
 
-class _MadLibs(Routine):
+class _MadLibsWords(Routine):
     """words from a simpsons episode classified into parts of speech and tags using spacy"""
+
     def __init__(self):
         super().__init__('TOK__')
         self.ADJ__JJ = ['able', 'absolute', 'airborne', 'alcoholic', 'alive', 'alternative', 'amazed', 'animatronic',
@@ -102,7 +110,7 @@ class _MadLibs(Routine):
                          'hill', 'hind', 'history', 'hl', 'hold', 'home', 'homeboy', 'homer', 'honey', 'host', 'hour',
                          'house', 'human', 'humor', 'hunk', 'hurt', 'hurter', 'ice', 'idea', 'image', 'in',
                          'ingredient', 'injection', 'inscription', 'interest', 'interior', 'intro', 'invitation',
-                         'island', 'it', 'jack', 'jar', 'jcw', 'journey', 'kb', 'keg', 'kid', 'kiddie', 'killing',
+                         'island', 'it', 'jack', 'jar', 'journey', 'kb', 'keg', 'kid', 'kiddie', 'killing',
                          'kind', 'kitchen', 'knife', 'know', 'lack', 'lamb', 'lamp', 'laude', 'lawn', 'leaf', 'left',
                          'leg', 'legend', 'length', 'lentil', 'lettuce', 'life', 'linda', 'line', 'lion', 'lisa',
                          'llama', 'load', 'loaf', 'lot', 'loudspeaker', 'lunch', 'machine', 'majority', 'man',
@@ -188,7 +196,7 @@ class _MadLibs(Routine):
                            'groundskeeper', 'guest', 'guests', 'guide', 'halas', 'ham', 'hank', 'harry', 'hartman',
                            'hayden', 'haynes', 'head', 'hendon', 'hey', 'hhg', 'hibbert', 'hiker', 'hill', 'hitch',
                            'hmmph', 'ho', 'hoek', 'homer', 'homes', 'homey', 'hoover', 'hot', 'idaho', 'independent',
-                           'india', 'itchy', 'jack', 'james', 'janey', 'janie', 'jay', 'jcw', 'jimmy', 'john', 'jose',
+                           'india', 'itchy', 'jack', 'james', 'janey', 'janie', 'jay', 'jimmy', 'john', 'jose',
                            'jp', 'julie', 'julius', 'jussi', 'kavner', 'kb', 'kevin', 'killer', 'kirkland', 'krabappel',
                            'krusty', 'kwik', 'lady', 'lafaurie', 'lake', 'lamb', 'laramie', 'larson', 'laughs', 'lee',
                            'leeesaaaa', 'lenny', 'lentil', 'limbo', 'linda', 'lipkin', 'lisa', 'little', 'log', 'lord',
@@ -280,24 +288,163 @@ class _MadLibs(Routine):
                           'tilts', 'transcribes', 'troops', 'turns', 'uses', 'walks', 'wants', 'wheels', 'writes']
         self.X__FW = ['av', 'etc', 'la', 'rl']
         self.X__XX = ['th']
+        self.professions = ['Accountants', 'Actors', 'Acupuncturists', 'Administrators', 'Advertising executives',
+                            'Air traffic controllers', 'Aircraft engineers', 'Anaesthetists', 'Animal breeders',
+                            'Anthropologists', 'Antique dealers', 'Archaeologists', 'Architects', 'Archivists',
+                            'Aromatherapists', 'Art critics', 'Art dealers', 'Art historians', 'Artists',
+                            'Assembly line workers', 'Astrologers', 'Astronomers', 'Au pairs', 'Auctioneers',
+                            'Auditors', 'Authors', 'Baggage handlers', 'Bailiffs', 'Bakers', 'Bank clerks',
+                            'Bank managers', 'Bar staffs', 'Barbers', 'Barristers', 'Beauty therapists', 'Blacksmiths',
+                            'Boat builders', 'Bodyguards', 'Book-keepers', 'Bookmakers', 'Brewers', 'Bricklayers',
+                            'Broadcasters', 'Builders', 'Building labourers', 'Bus drivers', 'Business consultants',
+                            'Business owners', 'Butchers', 'Butlers', 'Cabin crews', 'Cabinet makers',
+                            'Camera operators', 'Car dealers', 'Car wash attendants', 'Care assistants',
+                            'Career criminals', 'Careers advisors', 'Caretakers', 'Carpenters', 'Carpet fitters',
+                            'Cartoonists', 'Cashiers', 'Casual workers', 'Catering staffs', 'Chauffeurs', 'Chefs',
+                            'Chemists', 'Childcare workers', 'Childminders', 'Childrens entertainers', 'Chimney sweeps',
+                            'Chiropodists', 'Chiropractors', 'Choreographers', 'Circus workers', 'Civil servants',
+                            'Clairvoyants', 'Cleaners', 'Clergymen', 'Clerics', 'Clerical assistants', 'Clockmakers',
+                            'Coastguards', 'Comedians', 'Community workers', 'Company directors', 'Composers',
+                            'Computer analysts', 'Computer engineers', 'Computer programmers', 'Conservationists',
+                            'Construction workers', 'Cooks', 'Coroners', 'Costume designers', 'Counsellors',
+                            'Councillors', 'Couriers', 'Craftspeople', 'Crane drivers', 'Crematorium workers',
+                            'Croupiers', 'Crown prosecutors', 'Curators', 'Customs officers', 'Dancers',
+                            'Data processors', 'Debt collectors', 'Decorators', 'Delivery drivers', 'Dental hygienists',
+                            'Dental nurses', 'Dentists', 'Designers', 'Dieticians', 'Diplomats', 'Directors',
+                            'Disc jockeys', 'Divers', 'Doctors', 'Domestic staffs', 'Doormen', 'Dressmakers',
+                            'Driving instructors', 'Drug dealers', 'Economists', 'Editors', 'Electricians', 'Engineers',
+                            'Estate agents', 'Events organisers', 'Factory workers', 'Fairground workers', 'Farmers',
+                            'Farm workers', 'Fashion designers', 'Film directors', 'Financial advisors', 'Firefighters',
+                            'Fisherman/women', 'Fitness instructors', 'Flower arrangers', 'Flying instructors',
+                            'Footballers', 'Fork-lift drivers', 'Foster parents', 'Fundraisers', 'Funeral directors',
+                            'Gamekeepers', 'Garden designers', 'Gardeners', 'Gas fitters', 'Genealogists',
+                            'Grave diggers', 'Grooms', 'Hairdressers', 'Handymen', 'Healthcare assistants',
+                            'Health visitors', 'Heating engineers', 'Herbalists', 'Historians', 'Homeopaths',
+                            'Homemakers', 'Home-workers', 'Horticulturalists', 'Housekeepers', 'Hypnotherapists',
+                            'Illustrators', 'Immigration officers', 'Independent meanss', 'Insurance consultants',
+                            'Interior designers', 'Interpreters', 'Inventors', 'IT consultants', 'Jewellery makers',
+                            'Jockeys', 'Journalists', 'Judges', 'Kennel workers', 'Laboratory technicians', 'Labourers',
+                            'Landowners', 'Landscape gardeners', 'Lap dancers', 'Lawyers', 'Leaflet distributors',
+                            'Lecturers', 'Legal secretarys', 'Librarians', 'Lifeguards', 'Lift engineers',
+                            'Lighthouse keepers', 'Literary agents', 'Local govt workers', 'Lock keepers', 'Locksmiths',
+                            'Lorry drivers', 'Machinists', 'Magicians', 'Magistrates', 'Make-up artists',
+                            'Management consultants', 'Managing directors', 'Manicurists', 'Market traders',
+                            'Marketing directors', 'Massage therapists', 'Mathematicians', 'Medical students',
+                            'Merchant navy personnels', 'Meteorologists', 'Meter readers', 'Midwives', 'Miners',
+                            'Ministers', 'Missionarys', 'Models', 'Moneylenders', 'Morticians', 'Musicians', 'Nuns',
+                            'Nurses', 'Occupational therapists', 'Oil rig crews', 'Opticians', 'Osteopaths',
+                            'Paramedics', 'Park-keepers', 'Park rangers', 'Party planners', 'Pathologists',
+                            'Pawnbrokers', 'Pest controllers', 'Pharmacists', 'Photographers', 'Physiotherapists',
+                            'Pickpockets', 'Picture framers', 'Pilots', 'Plasterers', 'Plumbers', 'Police officers',
+                            'Politicians', 'Pop stars', 'Porters', 'Postal delivery workers', 'Preachers', 'Priests',
+                            'Printers', 'Prison officers', 'Private investigators', 'Probation officers', 'Producers',
+                            'Professors', 'Property developers', 'Prostitutes', 'Psychiatrists', 'Psychologists',
+                            'Publicans', 'Publishers', 'Racing drivers', 'Radio presenters', 'Receptionists',
+                            'Refuse collectors', 'Reporters', 'Researchers', 'Retireds', 'Road sweepers', 'Roofers',
+                            'Sailors', 'Salespeople', 'Scaffolders', 'School crossing wardens',
+                            'School meals supervisors', 'Scientists', 'Sculptors', 'Secretarys', 'Security guards',
+                            'Ship builders', 'Singers', 'Shoemakers', 'Shop assistants', 'Social workers',
+                            'Software consultants', 'Soldiers', 'Solicitors', 'Song writers', 'Special constables',
+                            'Speech therapists', 'Sports coaches', 'Sportspeople', 'Stockbrokers',
+                            'Street entertainers', 'Students', 'Surgeons', 'Surveyors', 'Tailors', 'Tarot Readers',
+                            'Tattooists', 'Tax inspectors', 'Taxi drivers', 'Teachers', 'Teaching assistants',
+                            'Telephonists', 'Telesales people', 'Television presenters', 'Toilet attendants',
+                            'Tour guides', 'Traffic wardens', 'Train drivers', 'Travel agents', 'Typists',
+                            'Undertakers', 'Veterinary surgeons', 'Waiting staffs', 'Window cleaners']
+
+        self._type_map = dict(adjective=self.ADJ__JJ,
+                              adjective_er=self.ADJ__JJR,
+                              gerund=self.VERB__VBG,
+                              past_participle=self.VERB__VBN,
+                              noun=self.NOUN__NN + self.PROPN__NNPS,
+                              plural_noun=self.NOUN__NNS,
+                              plural_profession=self.professions)
+
+    def by_word_type(self, word_type):
+        return self._type_map[word_type]
 
 
+class _MadLibs(Routine):
+    def __init__(self):
+        super().__init__('madlib', as_mp3=True)
+        self._mad_lib = """
+            When you hear the words Artificial Intelligence you may
+            think of scary things like <plural_noun> , telemarketer
+            bots, and <plural_noun> taking over the world. AI shouldn't
+            be scary. At its core it is simply changing input Eh into
+            output B. In digital advertising the input is almost always
+            <noun>. The output could be the sale of a  <noun>, a consumer
+            <gerund> your store, or a show being watched. Millions of
+            queries per second are processed resulting in  <adjective>
+            amounts of data. The growing detail and scale of this data
+            presents great opportunity for <plural_profession>, who can
+            harness it effectively to achieve their desired  <plural_noun>.
+            AI is trained to find pockets of performance in these massive
+            amounts of data, like finding a  <noun> in a <noun>. One
+            of the greatest fears surrounding AI is that humans will
+            be  <past_participle>. We believe there is a harmony between
+            humans and our  <adjective> technology, Copilot. Copilot
+            uses hundreds of thousands of machine learning models to
+            drive smarter,  <adjective_er> optimization. The human touch
+            and custom approach for each  <noun> is crucial. Don't be
+            afraid of AI, let it help you reach your  <adjective> goals.
+        """
+        self.mad_lib, self._options = self._init_obj()
+
+    def _init_obj(self):
+        import re
+        pattern = re.compile('<.*?>')
+        mad_lib = re.sub(r'\s+', ' ', self._mad_lib).strip()
+        sentences = (s for s in re.split(pattern, mad_lib) if s)
+        word_types = (w.lstrip('<').rstrip('>') for w in re.findall(pattern, mad_lib))
+        options = list(map(mad_libs_words.by_word_type, word_types))
+        words = (choice(list(o)) for o in options)
+        start_with_words = bool(re.match(pattern, mad_lib))
+        first, second = sentences, words
+        if start_with_words:
+            first, second = second, first
+
+        return ' '.join(interleave_longest(first, second)), options
+
+    async def run(self):
+        await self._generate()
+        await self.mad_lib
+
+
+mad_libs_words = _MadLibsWords()
 mad_libs = _MadLibs()
 
 
 async def explore():
-    for t in mad_libs:
+    for t in mad_libs_words:
+        print(80 * '=')
+        # with suppress(Exception):
         for term in t.split('__'):
             term = term.replace('dollarsign', '$')
             print(term, spacy.explain(term))
-        for _ in range(3):
-            await mad_libs[t]
+        vals = list(mad_libs_words[t])
+        print([choice(vals) for _ in range(7)])
+        print(80 * '=')
+        # for _ in range(3):
+        #     await mad_libs[t]
         print()
 
 
+def change_plurality():
+    import inflect
+    p = inflect.engine()
+    print(list(map(p.plural_noun, mad_libs_words.professions)))
+
+
 def __main():
-    # print(mad_libs.generate())
-    asyncio.run(explore())
+    # mad_libs.generate()
+    print(first(mad_libs.mad_lib.values()))
+    asyncio.run(mad_libs.run())
+    pass
+    # print(mad_libs.professions)
+    # mad_libs_words.generate('professions')
+    # change_plurality()
+    # asyncio.run(explore())
     # for t in mad_libs:
     #     for term in t.split('__'):
     #         term = term.replace('dollarsign', '$')

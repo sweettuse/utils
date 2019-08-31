@@ -19,10 +19,6 @@ __author__ = 'acushner'
 api = MistyAPI()
 
 _intro_images = ['e_Joy.jpg']
-_intro_prompts = ['face_train_intro.wav']
-_train_prompts = [f'face_training_time{i}.wav' for i in range(1, 4)]
-_train_instructions = ['face_training_inst.wav']
-_alright = ['alright.wav', 'alrighty_then.wav', 'ok.wav', 'ok_then.wav']
 _music_options = ['studiopolis_short.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
 _music_options += [
     'central_park_sunday.mp3',
@@ -50,8 +46,6 @@ _music_options += [
 _thanks = ['thank_you.wav', 'great.wav']
 _random = sounds[Mood.relaxed]
 _done_sounds = ['tada_win31.mp3']
-_pic_prompts = ['smile_for_the_camera.wav', 'lets_take_picture.wav']
-_pic_prompts = ['lets_take_picture.wav']
 _shutter_click = [f'camera_shutter_click_{i}.wav' for i in range(1, 4)]
 _face_eyes = ['e_ContentLeft.jpg', 'e_ContentRight.jpg']
 
@@ -73,7 +67,7 @@ class UID:
 
     @property
     def image(self):
-        return f'{self.uid}.jpg'
+        return self.uid
 
     @property
     def audio(self):
