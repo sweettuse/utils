@@ -14,12 +14,6 @@ from utils.misty.core import api
 __author__ = 'acushner'
 
 
-async def random_simpsons_quote():
-    fn = f'simpsons_{choice(range(1, 101))}.mp3'
-    print(fn)
-    await api.audio.play(fn)
-
-
 async def wave(l_or_r: str = 'r', position=60, velocity=60, n_times=6):
     positions = position, 0
     for i in range(n_times):
@@ -55,30 +49,6 @@ async def wait_play():
 
 def _get_random(v):
     return 2 * v * random() - v
-
-
-async def _run_n(coro: Callable[[], Awaitable[None]], n_times, sleep_time=.4):
-    for _ in range(n_times):
-        await coro()
-        await asyncio.sleep(sleep_time)
-
-
-async def move_head(pitch_max=20, roll_max=20, yaw_max=20, velocity=50, n_times=6):
-    async def _move():
-        await api.movement.move_head(pitch=_get_random(pitch_max), roll=_get_random(roll_max),
-                                     yaw=_get_random(yaw_max), velocity=velocity)
-
-    await _run_n(_move, n_times)
-
-
-async def move_arms(l_max=50, r_max=50, velocity=60, n_times=6):
-    async def _move():
-        await api.movement.move_arms(l_position=_get_random(l_max), r_position=_get_random(r_max), l_velocity=velocity,
-                                     r_velocity=velocity)
-
-    await _run_n(_move, n_times)
-
-
 
 
 async def eyes_wont_set():

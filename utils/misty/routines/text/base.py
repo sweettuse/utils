@@ -1,4 +1,4 @@
-from utils.misty.core import Routine
+from utils.misty.routine import Routine
 
 __author__ = 'acushner'
 
@@ -14,6 +14,17 @@ class _BaseText(Routine):
             "ok then",
             "cool",
             "neato",
+        ]
+
+        self.greeting = [
+            "hello!",
+            "hi there",
+            "greetings",
+            "how's it going?",
+            "hi!",
+            "good to see you",
+            "howdy",
+            "good afternoon",
         ]
 
         self.thanks = [
@@ -56,7 +67,7 @@ async def to_misty():
 
 
 def __main():
-    bt.generate('swears')
+    bt.generate('greeting')
     # print(bt.get_filenames())
     # print(bt.swears)
     # asyncio.run(to_misty())

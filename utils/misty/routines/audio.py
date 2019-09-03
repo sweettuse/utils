@@ -1,16 +1,16 @@
 import asyncio
-from collections import Coroutine
 from enum import Enum
 from random import choice
-from typing import Optional
 
-from utils.ggl.google_clients import AudioEncoding
-from utils.misty.core import named_temp_file, api
 from utils.ggl.ggl_async import atext_to_speech
+from utils.ggl.google_clients import AudioEncoding
+from utils.misty.core import api
 
 # from utils.ggl.google_clients import text_to_speech
 
 __author__ = 'acushner'
+
+__all__ = 'Mood play_mood random_sound say play random_simpsons_quote'.split()
 
 
 class Mood(Enum):
@@ -22,7 +22,6 @@ class Mood(Enum):
     terror = 'terror'
     sounds = 'sounds'
     relaxed = 'relaxed'
-    # alarmed = 'alarmed'
 
 
 sounds = {
@@ -38,6 +37,7 @@ sounds = {
 
 
 async def play_mood(mood):
+    """play all sounds from a given mood"""
     fns = sounds[mood]
     for fn in fns:
         print('playing:', mood, fn)
@@ -45,23 +45,37 @@ async def play_mood(mood):
 
 
 async def random_sound(mood=None, blocking=True):
+    """play a roundom built-in sound"""
     mood = mood or choice(list(Mood))
     fn = choice(sounds[mood])
     print('playing:', mood, fn)
     await api.audio.play(fn, blocking=blocking)
 
 
-async def say(s, after_upload: Optional[Coroutine] = None):
+async def say(s, *, do_animation=True, mult=1.5):
     clip = await atext_to_speech(s, AudioEncoding.wav)
     fn = 'from_google.wav'
-    with named_temp_file(fn) as f:
-        f.write(clip)
-        await api.audio.upload(f.name)
-    t = None
-    if after_upload:
-        t = asyncio.create_task(after_upload)
-    await api.audio.play(fn, blocking=True)
-    return t
+    await api.audio.upload(fn, data=clip)
+    await play(fn, do_animation=do_animation, mult=mult)
+
+
+async def play(fn, *, do_animation=True, mult=1.0):
+    """play a file on misty and animate by default"""
+    from utils.misty.routines.movement import animate
+    async with api.movement.reset_to_orig():
+        try:
+            if do_animation:
+                t = asyncio.create_task(animate(mult))
+            await api.audio.play(fn, blocking=True)
+        finally:
+            if do_animation:
+                t.cancel()
+
+
+async def random_simpsons_quote():
+    fn = f'simpsons_{choice(range(1, 101))}.mp3'
+    print(fn)
+    await api.audio.play(fn)
 
 
 def __main():

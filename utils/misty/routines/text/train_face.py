@@ -1,4 +1,4 @@
-from utils.misty.core import Routine
+from utils.misty.routine import Routine
 
 __author__ = 'acushner'
 
@@ -27,13 +27,14 @@ class _FTR(Routine):
             "it's picture time! look at me and smile, or make a funny face, or anything, and i'll take your picture!"
         ]
 
+        self.take_a_look = "take a look!"
+
         self.prompt_training = [
             "the part you've been waiting for: face training!"
         ]
 
         self.instructions = [
-            "to successfully get your face trained, please look at me, don't move too much, and enjoy the music. "
-            "you'll know when it's done when you hear tada!",
+            "to successfully get your face trained, please look at me, don't move too much, and enjoy the music. ",
             "please stare into my beautiful eyes, relax, and enjoy the music!"
         ]
 
@@ -49,7 +50,7 @@ ftr = _FTR()
 
 
 def __main():
-    ftr.generate('intro')
+    ftr.generate('take_a_look')
 
 
 if __name__ == '__main__':

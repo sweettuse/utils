@@ -52,14 +52,14 @@ async def respond_to_touch(sp: SubPayload):
     )
 
 
-async def play():
+async def _run():
     async with api.movement.reset_to_orig(), api.ws.sub_unsub(SubType.touch_sensor, respond_to_touch, 10000):
         await asyncio.sleep(30)
     await api.images.display('e_DefaultContent.jpg')
 
 
 def __main():
-    async_run(play())
+    async_run(_run())
 
 
 if __name__ == '__main__':

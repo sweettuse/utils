@@ -37,11 +37,6 @@ async def move_head(pitch=None, roll=None, yaw=None):
     return f'HEAD: pitch={pitch}, roll={roll}, yaw={yaw}'
 
 
-async def move_arms(l_position: Optional[float] = None, l_velocity: Optional[float] = None,
-                    r_position: Optional[float] = None, r_velocity: Optional[float] = None):
-    return f'{ArmSettings("left", l_position, l_velocity)},{ArmSettings("right", r_position, r_velocity)}'
-
-
 # api.movement.drive = drive
 # api.movement.stop = stop
 # api.movement.halt = halt
@@ -123,12 +118,13 @@ with StateChords.create_machine(root):
     head = StateChords('head', _get_head_chords())
     # arms = StateChords('arms', _get_arms_chords())
 
+
+async def run_remote():
+    return await parse_state(root)
+
+
 # TODO: add eye control
 
-# loop = asyncio.get_event_loop()
-# asyncio.run
-asyncio.run(parse_state(root))
 
-# asyncio.run(parse_state(root))
-# asyncio.run(chords.parse())
-# chords = {frozenset((Key.up,)): OnOff(api.movement.drive
+if __name__ == '__main__':
+    asyncio.run(run_remote())

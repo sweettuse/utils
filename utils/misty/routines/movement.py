@@ -1,21 +1,24 @@
 import asyncio
-import os
+import random
 from asyncio import wait_for
-from contextlib import suppress, asynccontextmanager
 from itertools import count
 from typing import Callable, Awaitable, NamedTuple
 
-from misty_py.api import MistyAPI, wait_in_order
-from random import random
-
-from misty_py.utils import asyncpartial, wait_for_group, wait_first
+from misty_py.api import MistyAPI
+from misty_py.misty_ws import EventCBUnchanged
+from misty_py.subscriptions import Actuator
+from misty_py.utils import wait_for_group
 
 __author__ = 'acushner'
+
+
+__all__ = 'move_head move_arms search animate nod shake_head'.split()
+
 api = MistyAPI()
 
 
 def _get_random(v):
-    return 2 * v * random() - v
+    return 2 * v * random.random() - v
 
 
 async def _run_n(coro: Callable[[], Awaitable[None]], n_times=0, sleep_time=.4):
@@ -82,6 +85,24 @@ class MoveArms(NamedTuple):
         return res
 
 
+async def search(pitch_min=0, pitch_max=15, yaw_min=-60, yaw_max=60, velocity=15):
+    """have misty look around. good for searching for faces to recognize."""
+    cb = EventCBUnchanged(4)
+    async with api.movement.reset_to_orig(), api.ws.sub_unsub(Actuator.yaw, cb):
+        yaws = yaw_min, yaw_max
+        cur = 0
+        while True:
+            cur += 1
+            cur &= 1
+            y = yaws[cur]
+            p = random.choice(range(pitch_min, pitch_max))
+            await asyncio.gather(
+                api.movement.move_head(pitch=p, yaw=y, velocity=velocity),
+                cb
+            )
+            cb.clear()
+
+
 async def animate(mult=1.0):
     async with api.movement.reset_to_orig(velocity=100):
         await wait_for_group(move_arms(**MoveArms(mult).kwargs), move_head(**MoveHead(mult).kwargs))
@@ -114,7 +135,8 @@ async def shake_head(pitch=None, roll=None, yaw=-40, velocity=100, n_times=6):
 
 
 def __main():
-    asyncio.run(wait_for(animate(2), 4))
+    asyncio.run(wait_for(search(), 20))
+    # asyncio.run(wait_for(animate(2), 4))
     # asyncio.run(move_arms(n_times=10))
     # asyncio.run(asyncio.gather(*[move_head(velocity=100, roll_max=50, n_times=20), move_arms(n_times=20)]))
 

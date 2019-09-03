@@ -50,11 +50,6 @@ async def smooth_jazz():
     return await wait_in_order(*coros)
 
 
-async def talk(s):
-    async with cancel(animate()):
-        await say(s)
-
-
 async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
     _music_options = ('studiopolis_short.mp3', 'gandalf_sax.mp3', 'messenger_howling_grotto.mp3',
                       'mk7_credits.mp3', 'price_is_right.mp3')
@@ -75,7 +70,7 @@ async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
 async def lets_get_silly():
     adj = silly.paragraph()
     print(adj)
-    await talk(adj)
+    await say(adj)
 
 
 async def lets_get_sweary():
@@ -86,15 +81,18 @@ async def lets_get_sweary():
             # await bt.emphatic
 
 
-async def play():
-    async with cancel(animate(2)):
-        await asyncio.sleep(5)
+async def t_base():
+    for _ in range(5):
+        await bt.greeting
 
 
 def __main():
     # async_run(smooth_jazz())
-    asyncio.run(party_mode(30))
+    # asyncio.run(party_mode(30))
     # async_run(lets_get_sweary())
+    # import os
+    # print(os.environ['MISTY_IP'])
+    async_run(t_base())
     # asyncio.run(talk('i am the jebtuse! how are you today?'))
 
 

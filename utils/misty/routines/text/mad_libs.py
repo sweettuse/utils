@@ -5,11 +5,12 @@ from functools import reduce
 from itertools import count
 from random import choice
 
+import silly
 import spacy
 from misty_py.utils import wait_in_order
 from more_itertools import interleave_longest, always_iterable, first
 
-from utils.misty.core import Routine, _TTSOption
+from utils.misty.routine import _TTSOption, Routine
 
 __author__ = 'acushner'
 
@@ -396,9 +397,9 @@ class _MadLibs(Routine):
         pattern = re.compile('<.*?>')
         mad_lib = re.sub(r'\s+', ' ', self._mad_lib).strip()
         sentences = (s for s in re.split(pattern, mad_lib) if s)
-        word_types = (w.lstrip('<').rstrip('>') for w in re.findall(pattern, mad_lib))
+        word_types = [w.lstrip('<').rstrip('>') for w in re.findall(pattern, mad_lib)]
         options = list(map(mad_libs_words.by_word_type, word_types))
-        words = (choice(list(o)) for o in options)
+        words = list(map(Silly.get, word_types))
         start_with_words = bool(re.match(pattern, mad_lib))
         first, second = sentences, words
         if start_with_words:
@@ -411,8 +412,57 @@ class _MadLibs(Routine):
         await self.mad_lib
 
 
-mad_libs_words = _MadLibsWords()
-mad_libs = _MadLibs()
+class Silly:
+    @staticmethod
+    def get(key):
+        return _silly_type_map[key]()
+
+    @staticmethod
+    def adjective_er():
+        return choice(['closer', 'greater', 'higher', 'lighter', 'more', 'better', 'longer', 'smarter', 'faster',
+                       'stronger', 'heartier', 'greasier', 'easier', 'heavier'])
+
+    @staticmethod
+    def gerund():
+        return choice(
+            ['amazing', 'apologizing', 'appetizing', 'arriving', 'attacking', 'badgering', 'being', 'bemoaning',
+             'blowing', 'bouncing', 'calling', 'chasing', 'chewing', 'chuckling', 'closing', 'coming', 'connecting',
+             'couching', 'courting', 'creating', 'displaying', 'doing', 'donating', 'driving', 'eating', 'featuring',
+             'flapping', 'floating', 'flying', 'following', 'forcing', 'forming', 'getting', 'going', 'greeting',
+             'having', 'hitting', 'holding', 'hurting', 'ignoring', 'including', 'indicating', 'ing', 'inviting',
+             'knife', 'laughing', 'leading', 'learning', 'leaving', 'looking', 'missing', 'moving', 'observing',
+             'paying', 'playing', 'pointing', 'pushing', 'reading', 'revealing', 'ripping', 'rolling', 'saying',
+             'scanning', 'scooting', 'seeing', 'serving', 'setting', 'shaping', 'sitting', 'sleeping', 'speaking',
+             'spraying', 'spying', 'standing', 'starring', 'starting', 'sticking', 'sucking', 'swilling', 'taking',
+             'talking', 'testing', 'thinking', 'trying', 'uprooting', 'using', 'waiting', 'walking', 'watching',
+             'waving', 'wearing', 'wheeling', 'wrecking', 'writing'],
+        )
+
+    @staticmethod
+    def past_participle():
+        return choice(
+            ['accompanied', 'animated', 'attached', 'based', 'been', 'brainwashed', 'broken', 'caught', 'chanted',
+             'characterized', 'charmed', 'chopped', 'collected', 'colored', 'compared', 'concerned', 'confused',
+             'crushed', 'curved', 'depicted', 'directed', 'distorted', 'excised', 'expected', 'exported',
+             'featured', 'filled', 'forced', 'forged', 'frozen', 'gathered', 'greeted',
+             'harmed', 'heard', 'hit', 'invited', 'involved', 'labeled', 'loaded', 'made', 'marked', 'opposed',
+             'overstimulated', 'placed', 'preserved', 'pulled', 'raised', 'redistributed', 'replaced',
+             'reproduced', 'required', 'screwed', 'seen', 'shown', 'slammed', 'smashed', 'sprayed', 'supposed', 'timed',
+             'trusted', 'used']
+        )
+
+    @staticmethod
+    def professions():
+        return choice(list(mad_libs_words.professions))
+
+
+_silly_type_map = dict(adjective=silly.adjective,
+                       adjective_er=Silly.adjective_er,
+                       gerund=Silly.gerund,
+                       past_participle=Silly.past_participle,
+                       noun=silly.noun,
+                       plural_noun=silly.plural,
+                       plural_profession=Silly.professions)
 
 
 async def explore():
@@ -436,8 +486,15 @@ def change_plurality():
     print(list(map(p.plural_noun, mad_libs_words.professions)))
 
 
+mad_libs_words = _MadLibsWords()
+mad_libs = _MadLibs()
+
+
 def __main():
     # mad_libs.generate()
+    # print(Silly.get('plural_noun'))
+    # print(Silly.adjective_er())
+    # print(Silly.get('adjective_er'))
     print(first(mad_libs.mad_lib.values()))
     asyncio.run(mad_libs.run())
     pass
