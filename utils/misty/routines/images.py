@@ -46,6 +46,7 @@ async def flash(colors: Union[RGB, List[RGB]], images: Union[str, List[str]],
         await asyncio.shield(_set(RGB(0, 0, 0), 'e_DefaultContent.jpg', off_time_secs, False, True))
 
 
+
 def __main():
     asyncio.run(flash(Colors.values(), eyes, on_time_secs=.05, off_time_secs=.02, flashlight=False))
 

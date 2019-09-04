@@ -7,7 +7,8 @@ from misty_py.utils import wait_in_order, wait_for_group, asyncpartial, wait_fir
 from more_itertools import always_iterable
 
 from utils.colors.colors import Colors
-from utils.misty.core import api, repeat, cancel
+from utils.misty.core import api
+from utils.aio.core import cancel, repeat
 from utils.misty.routines.audio import say, random_sound
 from utils.misty.routines.images import flash, all_eyes, eyes
 from utils.misty.routines.movement import move_head, move_arms, animate
@@ -51,6 +52,7 @@ async def smooth_jazz():
 
 
 async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
+    await bt.party_time
     _music_options = ('studiopolis_short.mp3', 'gandalf_sax.mp3', 'messenger_howling_grotto.mp3',
                       'mk7_credits.mp3', 'price_is_right.mp3')
     music = choice(list(always_iterable(music)) or _music_options)
@@ -92,7 +94,7 @@ def __main():
     # async_run(lets_get_sweary())
     # import os
     # print(os.environ['MISTY_IP'])
-    async_run(t_base())
+    async_run(party_mode())
     # asyncio.run(talk('i am the jebtuse! how are you today?'))
 
 

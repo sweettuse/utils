@@ -1,20 +1,14 @@
 import asyncio
-import os
-import shelve
 from asyncio import gather
-from contextlib import suppress, contextmanager
-from pathlib import Path
 from random import choice
-from uuid import uuid4
 
 from misty_py.api import MistyAPI
 from misty_py.apis.base import HEIGHT, WIDTH
 from misty_py.utils.color import RGB
-from misty_py.utils import async_run, wait_in_order, wait_first
+from misty_py.utils import wait_in_order, wait_first
 
-from utils.core import play_sound
 from utils.ggl.ggl_async import aspeech_to_text, atext_to_speech
-from utils.misty.core import run_in_executor
+from utils.misty.core import UID
 from utils.misty.routines.audio import Mood, sounds, play
 from utils.misty.routines.text.base import bt
 
@@ -57,55 +51,6 @@ async def _test_music():
     for m in _music_options:
         print(m)
         await api.audio.play(m, how_long_secs=4, blocking=True)
-
-
-class UID:
-    def __init__(self, prefix=''):
-        self.uid = self._init_uid(prefix)
-
-    @staticmethod
-    def _init_uid(prefix):
-        _base = hex(uuid4().fields[0])[2:]
-        return ('' if not prefix else f'{prefix}_') + _base
-
-    @property
-    def image(self):
-        return self.uid
-
-    @property
-    def audio(self):
-        return f'{self.uid}.wav'
-
-    @property
-    def audio_misty(self):
-        return f'{self.uid}_misty.wav'
-
-    async def prompt_name(self):
-        async def _prompt():
-            with suppress(asyncio.TimeoutError):
-                name = await asyncio.wait_for(run_in_executor(input, "type in name: "), 20)
-                await run_in_executor(self.store, name)
-        asyncio.create_task(_prompt())
-        print()
-
-    @classmethod
-    @contextmanager
-    def _open_store(cls):
-        with shelve.open(str(Path('~/.misty_store').expanduser())) as db:
-            yield db
-
-    def store(self, name):
-        with self._open_store() as db:
-            db[self.uid] = name
-
-    @classmethod
-    def dump_store(cls):
-        with cls._open_store() as db:
-            for pair in db.items():
-                print(pair)
-
-    def __str__(self):
-        return self.uid
 
 
 async def _intro():
@@ -155,8 +100,9 @@ async def _take_picture(uid: UID):
     )
     await gather(
         play(choice(_shutter_click), do_animation=False),
-        api.images.take_picture(uid.image, width=WIDTH, height=HEIGHT, show_on_screen=True),
+        api.images.take_picture(uid.image, width=WIDTH, height=HEIGHT),
     )
+    await api.images.display(uid.image)
     await bt.thanks
     await ftr.take_a_look
     await asyncio.sleep(4)
@@ -203,6 +149,8 @@ async def train_face():
     - flask server to automatically associate names with faces?
     """
     # await api.audio.wait_for_key_phrase()
+    print(UID.dump_store())
+    return
     uid = UID('ftuid')
     await _intro()
     print(str(uid))
@@ -211,6 +159,7 @@ async def train_face():
     await _train(uid)
     await play(uid.audio_misty)
     await _done()
+    await (await uid.prompt_name())
 
 
 def __main():

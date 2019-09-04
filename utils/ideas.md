@@ -2,7 +2,7 @@
 
 - [x] simple mad libs, perhaps with different voice
 - [ ] face training/recognition:
-    - [ ] improve on challenge
+    - [x] improve on challenge
     - [x] have misty search for people
     - [ ] say hi to them as they walk by
 - [x] internet test

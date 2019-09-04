@@ -56,6 +56,12 @@ class _BaseText(Routine):
             "butthole",
             "assface",
         ]
+        self.party_time = [
+            "it's party time!",
+            "time to get our party on!",
+            "who wants to rock out?",
+            "i'm such a dork, but let's party anyway!"
+        ]
 
 
 bt = _BaseText()
@@ -67,7 +73,7 @@ async def to_misty():
 
 
 def __main():
-    bt.generate('greeting')
+    bt.generate('party_time')
     # print(bt.get_filenames())
     # print(bt.swears)
     # asyncio.run(to_misty())
