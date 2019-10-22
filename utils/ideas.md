@@ -11,15 +11,15 @@
     - `from utils.misty import *`
 
 ##### to bring:
-- [ ] misty
-- [ ] macbook
-- [ ] chargers
-    - [ ] phone
-    - [ ] macbook
-    - [ ] misty
-- [ ] power strip or 2
+- [x] misty
+- [x] macbook
+- [x] chargers
+    - [x] phone
+    - [x] macbook
+    - [x] misty
+- [x] power strip or 2
 - [ ] extension cord
-- [ ] hdmi cable
+- [x] hdmi cable
 - [ ] raspberry pi?
 
 

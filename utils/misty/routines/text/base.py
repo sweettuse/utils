@@ -73,7 +73,7 @@ async def to_misty():
 
 
 def __main():
-    bt.generate('party_time')
+    bt.generate()
     # print(bt.get_filenames())
     # print(bt.swears)
     # asyncio.run(to_misty())

@@ -53,8 +53,8 @@ async def respond_to_touch(sp: SubPayload):
 
 
 async def _run():
-    async with api.movement.reset_to_orig(), api.ws.sub_unsub(SubType.touch_sensor, respond_to_touch, 10000):
-        await asyncio.sleep(30)
+    async with api.movement.reset_to_orig(), api.ws.sub_unsub(SubType.touch_sensor, respond_to_touch, 250):
+        await asyncio.sleep(999)
     await api.images.display('e_DefaultContent.jpg')
 
 

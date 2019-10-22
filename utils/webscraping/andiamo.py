@@ -43,14 +43,20 @@ class Header(NamedTuple):
 
     college: str
     degree: str
+    linked_in: str
 
     @classmethod
-    def from_soup(cls, fields):
+    def from_soup(cls, fields, links):
         if '@' not in fields[3]:
             fields.insert(3, '')
         fields[-4] = float(fields[-4])
         fave = fields[0] == '0'
-        return cls(fave, *fields[2:-1])
+        hrefs = (l.get('href') for l in links)
+        linked_in = [h for h in hrefs if h and 'linkedin' in h]
+        li = None
+        if linked_in:
+            li = linked_in[0]
+        return cls(fave, *fields[2:-1], li)
 
 
 class Body(NamedTuple):
@@ -86,7 +92,7 @@ def __main():
     for r in rows[5:]:
         fields = _fields(r)
         if is_header(fields):
-            cur_header = Header.from_soup(fields)
+            cur_header = Header.from_soup(fields, r.find_all('a'))
         elif is_body(fields):
             res.append(Both(cur_header, Body.from_soup(fields)))
     df = pd.DataFrame([b.dict for b in res])

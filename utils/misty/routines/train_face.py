@@ -150,7 +150,6 @@ async def train_face():
     """
     # await api.audio.wait_for_key_phrase()
     print(UID.dump_store())
-    return
     uid = UID('ftuid')
     await _intro()
     print(str(uid))

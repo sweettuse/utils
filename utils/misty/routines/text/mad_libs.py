@@ -1,16 +1,11 @@
 import asyncio
-import operator
-from contextlib import suppress
-from functools import reduce
-from itertools import count
 from random import choice
 
 import silly
 import spacy
-from misty_py.utils import wait_in_order
-from more_itertools import interleave_longest, always_iterable, first
+from more_itertools import interleave_longest
 
-from utils.misty.routine import _TTSOption, Routine
+from utils.misty.routine import Routine
 
 __author__ = 'acushner'
 
@@ -384,7 +379,7 @@ class _MadLibs(Routine):
             amounts of data, like finding a  <noun> in a <noun>. One
             of the greatest fears surrounding AI is that humans will
             be  <past_participle>. We believe there is a harmony between
-            humans and our  <adjective> technology, Copilot. Copilot
+            humans and our  <adjective_pos> technology, Copilot. Copilot
             uses hundreds of thousands of machine learning models to
             drive smarter,  <adjective_er> optimization. The human touch
             and custom approach for each  <noun> is crucial. Don't be
@@ -398,14 +393,14 @@ class _MadLibs(Routine):
         mad_lib = re.sub(r'\s+', ' ', self._mad_lib).strip()
         sentences = (s for s in re.split(pattern, mad_lib) if s)
         word_types = [w.lstrip('<').rstrip('>') for w in re.findall(pattern, mad_lib)]
-        options = list(map(mad_libs_words.by_word_type, word_types))
+        # options = list(map(mad_libs_words.by_word_type, word_types))
         words = list(map(Silly.get, word_types))
         start_with_words = bool(re.match(pattern, mad_lib))
         first, second = sentences, words
         if start_with_words:
             first, second = second, first
 
-        return ' '.join(interleave_longest(first, second)), options
+        return ' '.join(interleave_longest(first, second)), None
 
     async def run(self):
         await self._generate()
@@ -455,6 +450,19 @@ class Silly:
     def professions():
         return choice(list(mad_libs_words.professions))
 
+    @staticmethod
+    def adjective_pos():
+        return choice(
+            ['heroic', 'magnificent', 'mighty', 'amazing', 'wonderful', 'fantastic', 'incredible', 'spectacular',
+             'tremendous', 'enormous', 'terrific', 'wondrous', 'spectacular', 'big', 'mighty', 'musky', 'sassy', 'huge',
+             'chartreuse', 'coral', 'corn', 'flower', 'crimson', 'cyan', 'navy', 'goldenrod', 'magenta', 'olive',
+             'salmon', 'slate', 'chiffon', 'purple', 'orchid', 'linen', 'rose', 'orange', 'sandy', 'shell', 'thistle',
+             'iron', 'bronze', 'stone', 'birch', 'cedar', 'cherry', 'sandal', 'pine', 'fir', 'yew', 'hem', 'lock',
+             'spruce', 'camphor', 'huckleberry', 'cinnamon', 'spice', 'basil', 'cardamom', 'capable', 'fast',
+             'charming', 'noticeable', 'banana', 'good', 'great', 'fantusetic', 'summer', 'iced', 'popular', 'soulful',
+             'spectacular', 'laudable', 'memorable', 'mysterious', 'sexy', 'tractable', 'touchable']
+        )
+
 
 _silly_type_map = dict(adjective=silly.adjective,
                        adjective_er=Silly.adjective_er,
@@ -462,21 +470,19 @@ _silly_type_map = dict(adjective=silly.adjective,
                        past_participle=Silly.past_participle,
                        noun=silly.noun,
                        plural_noun=silly.plural,
-                       plural_profession=Silly.professions)
+                       plural_profession=Silly.professions,
+                       adjective_pos=Silly.adjective_pos)
 
 
 async def explore():
     for t in mad_libs_words:
         print(80 * '=')
-        # with suppress(Exception):
         for term in t.split('__'):
             term = term.replace('dollarsign', '$')
             print(term, spacy.explain(term))
         vals = list(mad_libs_words[t])
         print([choice(vals) for _ in range(7)])
         print(80 * '=')
-        # for _ in range(3):
-        #     await mad_libs[t]
         print()
 
 
@@ -491,22 +497,7 @@ mad_libs = _MadLibs()
 
 
 def __main():
-    # mad_libs.generate()
-    # print(Silly.get('plural_noun'))
-    # print(Silly.adjective_er())
-    # print(Silly.get('adjective_er'))
-    print(first(mad_libs.mad_lib.values()))
     asyncio.run(mad_libs.run())
-    pass
-    # print(mad_libs.professions)
-    # mad_libs_words.generate('professions')
-    # change_plurality()
-    # asyncio.run(explore())
-    # for t in mad_libs:
-    #     for term in t.split('__'):
-    #         term = term.replace('dollarsign', '$')
-    #         print(term, spacy.explain(term))
-    #     print()
 
 
 if __name__ == '__main__':

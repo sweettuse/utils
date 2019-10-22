@@ -85,8 +85,7 @@ class RecognizeAndRespond:
         await self._init_search()
 
     async def _greet(self, name):
-        t = asyncio.create_task(flash(colors, images, on_time_secs=.4, off_time_secs=.05, flashlight=True))
-        print('here')
+        t = asyncio.create_task(flash(colors, images, on_time_secs=.4, off_time_secs=.05, flashlight=False))
         await bt.greeting
         if name in self._names:
             await play(UID.from_name(name).audio_misty)
