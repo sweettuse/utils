@@ -73,7 +73,7 @@ async def play(fn, *, do_animation=True, mult=1.0):
 
 
 async def random_simpsons_quote():
-    fn = f'simpsons_{choice(range(1, 101))}.mp3'
+    fn = f'simpsons--simpsons_{choice(range(1, 101))}.mp3'
     print(fn)
     await api.audio.play(fn)
 

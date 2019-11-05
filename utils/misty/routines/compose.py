@@ -28,11 +28,11 @@ async def smooth_jazz():
     p = asyncpartial(api.audio.play, blocking=True)
 
     await api.movement.move_head(0, 0, 0, velocity=40)
-    await p('smooth_jazz_will_be_deployed.mp3')
+    await p('misc--smooth_jazz_will_be_deployed.mp3')
     g = asyncio.gather(move_head(velocity=100, roll_max=50), move_arms())
     coros = (
         wait_for_group(
-            p('smooth_jazz.mp3'),
+            p('misc--smooth_jazz.mp3'),
             api.images.display('e_Love.jpg'),
             wait_in_order(
                 asyncio.sleep(8.5),
@@ -53,8 +53,8 @@ async def smooth_jazz():
 
 async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
     await bt.party_time
-    _music_options = ('studiopolis_short.mp3', 'gandalf_sax.mp3', 'messenger_howling_grotto.mp3',
-                      'mk7_credits.mp3', 'price_is_right.mp3')
+    _music_options = ('sfx--studiopolis.mp3', 'music--gandalf_sax.mp3', 'vgm--best--messenger_howling_grotto.mp3',
+                      'vgm--best--mk7_credits.mp3', 'music--price_is_right.mp3')
     music = choice(list(always_iterable(music)) or _music_options)
     print(music)
     play = asyncpartial(api.audio.play, music, blocking=True)

@@ -50,7 +50,7 @@ ftr = _FTR()
 
 
 def __main():
-    ftr.generate('take_a_look')
+    ftr.generate()
 
 
 if __name__ == '__main__':

@@ -19,31 +19,31 @@ __author__ = 'acushner'
 api = MistyAPI()
 
 _intro_images = ['e_Joy.jpg']
-_music_options = ['studiopolis_short.mp3', 'price_is_right.mp3', 'gandalf_sax.mp3']
-_music_options += [
-    'central_park_sunday.mp3',
-    '3-24 Jump Up, Super Star! Music Box Version.mp3',
-    'moon_remastered.mp3',
-    'messenger_howling_grotto.mp3',
-    '02 Overworld.mp3',
-    'iitr_song_of_storms.mp3',
-    '1-09 Fossil Falls.mp3',
-    '13 - Baby Universe.mp3',
-    '1-17 Gusty Garden Galaxy.mp3',
-    '3-26 Jump Up, Super Star!.mp3',
-    '2-36 Password.mp3',
-    '01 nananan katamari.mp3',
-    'iirt_aquatic_ruin_zone.mp3',
-    'mk7_credits.mp3',
-    '06 lonely rolling star.mp3',
-]
-_music_options += [
-    'lizzo_juice.mp3',
-]
+_music_options = ['sfx--studiopolis.mp3']
+# _music_options += [
+#     'central_park_sunday.mp3',
+#     '3-24 Jump Up, Super Star! Music Box Version.mp3',
+#     'moon_remastered.mp3',
+#     'messenger_howling_grotto.mp3',
+#     '02 Overworld.mp3',
+#     'iitr_song_of_storms.mp3',
+#     '1-09 Fossil Falls.mp3',
+#     '13 - Baby Universe.mp3',
+#     '1-17 Gusty Garden Galaxy.mp3',
+#     '3-26 Jump Up, Super Star!.mp3',
+#     '2-36 Password.mp3',
+#     '01 nananan katamari.mp3',
+#     'iirt_aquatic_ruin_zone.mp3',
+#     'mk7_credits.mp3',
+#     '06 lonely rolling star.mp3',
+# ]
+# _music_options += [
+#     'lizzo_juice.mp3',
+# ]
 _thanks = ['thank_you.wav', 'great.wav']
 _random = sounds[Mood.relaxed]
-_done_sounds = ['tada_win31.mp3']
-_shutter_click = [f'camera_shutter_click_{i}.wav' for i in range(1, 4)]
+_done_sounds = ['sfx--tada_win31.mp3']
+_shutter_click = [f'sfx--camera_shutter_click_{i}.wav' for i in range(1, 4)]
 _face_eyes = ['e_ContentLeft.jpg', 'e_ContentRight.jpg']
 
 
@@ -68,17 +68,16 @@ async def _record(uid, record_time):
 
 async def _get_name(uid: UID, record_time=3):
     await wait_in_order(
-        play('first.wav'),
+        bt.first,
         ftr.prompt_name,
         api.images.set_led(RGB(255, 255, 0)),
         asyncio.create_task(uid.prompt_name()),
         _record(uid, record_time),
         api.images.set_led(),
-        play(choice(_thanks)),
+        bt.thanks,
     )
-    t = asyncio.create_task(_convert_to_misty_speech(uid))
+    await _convert_to_misty_speech(uid)
     print(uid.audio)
-    return t
 
 
 async def _convert_to_misty_speech(uid: UID):
@@ -92,10 +91,10 @@ async def _convert_to_misty_speech(uid: UID):
 
 
 async def _take_picture(uid: UID):
-    await play('next.wav')
+    await bt.next
     await ftr.prompt_picture
     await gather(
-        play('321.mp3', do_animation=False),
+        bt.three_two_one.play(do_animation=False),
         api.images.display('e_SystemCamera.jpg')
     )
     await gather(
@@ -111,7 +110,7 @@ async def _take_picture(uid: UID):
 async def _train(uid: UID):
     # put in new eyes here
     await api.images.display(choice(_face_eyes))
-    await play('finally.wav')
+    await bt.final
     await ftr.prompt_training
     await ftr.instructions
     await api.images.set_led(RGB(255, 255, 0))
@@ -121,10 +120,10 @@ async def _train(uid: UID):
     )
     await gather(
         api.images.set_led(RGB(0, 255, 0)),
-        play('tada_win31.mp3'),
+        play('sfx--tada_win31.mp3'),
         api.images.display('e_Amazement.jpg')
     )
-    await play(choice(_thanks))
+    await bt.thanks
     await play(uid.audio_misty)
     await ftr.goodbye
 
@@ -148,7 +147,7 @@ async def train_face():
     - ultimately a simple website with form to add cool things about the person?
     - flask server to automatically associate names with faces?
     """
-    # await api.audio.wait_for_key_phrase()
+    await api.audio.wait_for_key_phrase()
     print(UID.dump_store())
     uid = UID('ftuid')
     await _intro()
@@ -157,20 +156,19 @@ async def train_face():
     await _take_picture(uid)
     await _train(uid)
     await play(uid.audio_misty)
+    print('almost done')
     await _done()
-    await (await uid.prompt_name())
+    # await (await uid.prompt_name())
 
 
 def __main():
     # asyncio.run(api.audio.play('lizzo_juice.mp3'))
     # async_run(_test_music())
+    uid = UID.from_name('ftuid_d7ea6fcb')
+    # asyncio.run(_convert_to_misty_speech(uid))
     asyncio.run(train_face())
 
 
 if __name__ == '__main__':
     __main()
 
-    # starts with alrighty then - remove
-    # let's take a pic too abrupt'
-    # too abrupt for face training time
-    # crappy names fail the thing

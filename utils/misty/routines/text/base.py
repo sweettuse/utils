@@ -33,6 +33,11 @@ class _BaseText(Routine):
             "great",
         ]
 
+        self.first = "first"
+        self.next = "next"
+        self.three_two_one = "3, 2, 1"
+        self.final = "finally"
+
         self.emphatic = [
             "so much",
             "a lot",
@@ -73,7 +78,9 @@ async def to_misty():
 
 
 def __main():
-    bt.generate()
+    bt.generate('next')
+    bt.generate('three_two_one')
+    bt.generate('final')
     # print(bt.get_filenames())
     # print(bt.swears)
     # asyncio.run(to_misty())

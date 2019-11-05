@@ -16,7 +16,7 @@ class _AudioOption(dict):
     def random(self):
         return choice(list(self.keys()))
 
-    async def play(self):
+    async def play(self, do_animation=True):
         from utils.misty.routines.audio import random_sound, Mood, play
 
         if not api.audio.saved_audio:
@@ -26,7 +26,7 @@ class _AudioOption(dict):
             r = self.random
             if r not in api.audio.saved_audio:
                 continue
-            return await play(r)
+            return await play(r, do_animation=do_animation)
 
         return await random_sound(Mood.excited)
 
