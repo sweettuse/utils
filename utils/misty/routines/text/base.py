@@ -72,9 +72,9 @@ class _BaseText(Routine):
 bt = _BaseText()
 
 
-async def to_misty():
-    for _ in range(10):
-        await bt.swears
+# async def to_misty():
+#     for _ in range(10):
+#         await bt.swears
 
 
 def __main():

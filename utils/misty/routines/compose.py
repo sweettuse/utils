@@ -70,7 +70,7 @@ async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
 
 
 async def lets_get_silly():
-    adj = silly.paragraph()
+    adj = silly.sentence()
     print(adj)
     await say(adj)
 

@@ -50,15 +50,15 @@ def _get_drive_chords():
         return OnOff(on, lambda: api.movement.stop(), MistyChordGroup.drive)
 
     chords = Chords()
-    chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(10))
+    chords[Key.up,] = _create_drive_func(lambda: api.movement.drive(20))
     chords[Key.right,] = _create_drive_func(lambda: api.movement.drive(0, 1))
-    chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-10))
+    chords[Key.down,] = _create_drive_func(lambda: api.movement.drive(-20))
     chords[Key.left,] = _create_drive_func(lambda: api.movement.drive(0, -1))
 
-    chords[Key.up, Key.left] = _create_drive_func(lambda: api.movement.drive(10, -1))
-    chords[Key.up, Key.right] = _create_drive_func(lambda: api.movement.drive(10, 1))
-    chords[Key.down, Key.left] = _create_drive_func(lambda: api.movement.drive(-10, -1))
-    chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-10, 1))
+    chords[Key.up, Key.left] = _create_drive_func(lambda: api.movement.drive(20, -1))
+    chords[Key.up, Key.right] = _create_drive_func(lambda: api.movement.drive(20, 1))
+    chords[Key.down, Key.left] = _create_drive_func(lambda: api.movement.drive(-20, -1))
+    chords[Key.down, Key.right] = _create_drive_func(lambda: api.movement.drive(-20, 1))
     return chords
 
 
