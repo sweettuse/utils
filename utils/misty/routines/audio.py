@@ -38,44 +38,44 @@ sounds = {
 
 async def play_mood(mood):
     """play all sounds from a given mood"""
-    fns = sounds[mood]
-    for fn in fns:
-        print('playing:', mood, fn)
-        await api.audio.play(fn, blocking=True)
+    names = sounds[mood]
+    for n in names:
+        print('playing:', mood, n)
+        await api.audio.play(n, blocking=True)
 
 
 async def random_sound(mood=None, blocking=True):
     """play a roundom built-in sound"""
     mood = mood or choice(list(Mood))
-    fn = choice(sounds[mood])
-    print('playing:', mood, fn)
-    await api.audio.play(fn, blocking=blocking)
+    name = choice(sounds[mood])
+    print('playing:', mood, name)
+    await api.audio.play(name, blocking=blocking)
 
 
 async def say(s, *, do_animation=True, mult=1.5):
     clip = await atext_to_speech(s, AudioEncoding.wav)
-    fn = 'from_google.wav'
-    await api.audio.upload(fn, data=clip)
-    await play(fn, do_animation=do_animation, mult=mult)
+    name = 'from_google.wav'
+    await api.audio.upload(name, data=clip)
+    await play(name, do_animation=do_animation, mult=mult)
 
 
-async def play(fn, *, do_animation=True, mult=1.0):
+async def play(name, *, do_animation=True, mult=1.0):
     """play a file on misty and animate by default"""
     from utils.misty.routines.movement import animate
     async with api.movement.reset_to_orig():
         try:
             if do_animation:
                 t = asyncio.create_task(animate(mult))
-            await api.audio.play(fn, blocking=True)
+            await api.audio.play(name, blocking=True)
         finally:
             if do_animation:
                 t.cancel()
 
 
 async def random_simpsons_quote():
-    fn = f'simpsons--simpsons_{choice(range(1, 101))}.mp3'
-    print(fn)
-    await api.audio.play(fn)
+    name = f'simpsons--simpsons_{choice(range(1, 101))}.mp3'
+    print(name)
+    await api.audio.play(name)
 
 
 def __main():

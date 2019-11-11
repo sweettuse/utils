@@ -1,7 +1,38 @@
+#### for demo:
+
+- [ ] fix misty's sounds/moods
+- [ ] fix train face - test with lower volume?
+
+- to demo:
+    - audio:
+        - [ ] say
+        - [ ] play
+    - touch
+        - [ ] respond to touch
+    - compose
+        - [ ] smooth_jazz
+        - [ ] party_mode
+        - [ ] lets_get_silly
+    - [ ] train_face
+- to discuss:
+    - dialogflow - for conversations with xaxis traders
+    - CES: recognizing faces and saying hello
+    - CES: responding to questions about schedule
+    - CES: mistyrobotics will be there and are willing to help out
+    - CES: makes us look smart - i wrote the api for this
+    and they interviewed me at my place
+    
+- concerns with interaction (from kelley email):
+    - volume (use a bluetooth connected speaker)
+    - keyphrase (might be too loud - instead respond to touch?)
+    - recording audio (workaround discovered - lower the volume to around 50)
+
+
+
 #### for WIT
 
 - [x] simple mad libs, perhaps with different voice
-- [ ] face training/recognition:
+- [x] face training/recognition:
     - [x] improve on challenge
     - [x] have misty search for people
     - [ ] say hi to them as they walk by

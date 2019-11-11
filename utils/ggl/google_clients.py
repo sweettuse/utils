@@ -13,7 +13,7 @@ __author__ = 'acushner'
 
 _tts_client = tts.TextToSpeechClient()
 _stt_client = speech.SpeechClient()
-_translate_client = translate.Client()
+_translate_client = translate.TranslationServiceClient()
 
 
 def _ssmlify_text(text):
@@ -167,8 +167,8 @@ def __main():
         '3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
     # t = 'ready to have your face trained? look at me and smile. keep looking at me until the music stops playing'
     # t = '<speak>starting in 3<break time="850ms"/>2<break time="850ms"/>1<break time="850ms"/></speak>'
-    detect_text('/tmp/nalgene.jpg')
-    return
+    # detect_text('/tmp/nalgene.jpg')
+    # return
     t = "hi there!<break strength=\"weak\"/> misty is my old name<break strength=\"weak\"/>, i'm actually called co-pi-lette<break strength=\"weak\"/> and i'd like to learn your face!"
     suffix = 'wav'
     r = text_to_speech(t, suffix_type_dict[suffix])

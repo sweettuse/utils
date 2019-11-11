@@ -1,4 +1,3 @@
-pynput
 arrow
 google-cloud-speech
 google-cloud-texttospeech
@@ -7,4 +6,6 @@ more-itertools
 numpy
 pandas
 uvloop
+pynput
+spacy
 git+https://github.com/acushner-xaxis/misty_py.git
