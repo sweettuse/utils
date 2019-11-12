@@ -1,12 +1,17 @@
 #### for demo:
 
-- [ ] fix misty's sounds/moods
-- [ ] fix train face - test with lower volume?
+- [x] fix misty's sounds/moods
+- [x] fix train face - test with lower volume?
+- [ ] calibrate misty
 
 - to demo:
     - audio:
         - [ ] say
         - [ ] play
+    - movement
+        - [ ] search?
+        - [ ] nod?
+        - [ ] shake_head?
     - touch
         - [ ] respond to touch
     - compose
@@ -14,12 +19,15 @@
         - [ ] party_mode
         - [ ] lets_get_silly
     - [ ] train_face
+    - [ ] `from utils.misty.routines.identify import run` 
 - to discuss:
+    - i wrote the API i'm using
+    - i got to use a field trial version
+    - they out to interview me
     - dialogflow - for conversations with xaxis traders
     - CES: recognizing faces and saying hello
     - CES: responding to questions about schedule
     - CES: mistyrobotics will be there and are willing to help out
-    - CES: makes us look smart - i wrote the api for this
     and they interviewed me at my place
     
 - concerns with interaction (from kelley email):
@@ -27,6 +35,9 @@
     - keyphrase (might be too loud - instead respond to touch?)
     - recording audio (workaround discovered - lower the volume to around 50)
 
+#### bugs
+- [ ] add `ignore` to `reset_to_orig`
+- [ ] can't set both arm positions simultaneously, for some reason
 
 
 #### for WIT

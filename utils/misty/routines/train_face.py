@@ -41,7 +41,7 @@ _music_options = ['sfx--studiopolis.mp3']
 #     'lizzo_juice.mp3',
 # ]
 _thanks = ['thank_you.wav', 'great.wav']
-_random = sounds[Mood.relaxed]
+_random = sounds[Mood.acceptance]
 _done_sounds = ['sfx--tada_win31.mp3']
 _shutter_click = [f'sfx--camera_shutter_click_{i}.wav' for i in range(1, 4)]
 _face_eyes = ['e_ContentLeft.jpg', 'e_ContentRight.jpg']
@@ -103,8 +103,6 @@ async def _take_picture(uid: UID):
     )
     await api.images.display(uid.image)
     await bt.thanks
-    await ftr.take_a_look
-    await asyncio.sleep(4)
 
 
 async def _train(uid: UID):
@@ -155,17 +153,12 @@ async def train_face():
     t = await _get_name(uid)
     await _take_picture(uid)
     await _train(uid)
-    await play(uid.audio_misty)
     print('almost done')
     await _done()
     # await (await uid.prompt_name())
 
 
 def __main():
-    # asyncio.run(api.audio.play('lizzo_juice.mp3'))
-    # async_run(_test_music())
-    uid = UID.from_name('ftuid_d7ea6fcb')
-    # asyncio.run(_convert_to_misty_speech(uid))
     asyncio.run(train_face())
 
 

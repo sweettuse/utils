@@ -1,6 +1,7 @@
 import asyncio
 from enum import Enum
 from random import choice
+from typing import Optional
 
 from utils.ggl.ggl_async import atext_to_speech
 from utils.ggl.google_clients import AudioEncoding
@@ -14,25 +15,56 @@ __all__ = 'Mood play_mood random_sound say play random_simpsons_quote'.split()
 
 
 class Mood(Enum):
-    curious = 'curious'
-    excited = 'excited'
-    hate = 'hate'
-    idle = 'idle'
+    acceptance = 'acceptance'
+    amazement = 'amazement'
+    anger = 'anger'
+    annoyance = 'annoyance'
+    awe = 'awe'
+    boredom = 'boredom'
+    disapproval = 'disapproval'
+    disgust = 'disgust'
+    disoriented_confused = 'disoriented_confused'
+    distraction = 'distraction'
+    ecstacy = 'ecstacy'
+    fear = 'fear'
+    grief = 'grief'
+    joy = 'joy'
+    loathing = 'loathing'
     love = 'love'
-    terror = 'terror'
-    sounds = 'sounds'
-    relaxed = 'relaxed'
+    phrase = 'phrase'
+    rage = 'rage'
+    sadness = 'sadness'
+    sleepy = 'sleepy'
+    sleepy_snore = 'sleepy_snore'
+    system = 'system'
 
 
 sounds = {
-    Mood.curious: '001-EeeeeeE.wav 004-EuuEuuuuu.wav 005-EeeeeeE-02.wav 007-EeeHA.wav 010-Uhm.wav 020-eooooO.wav 023-Tiss.wav 024-Tiss-02.wav'.split(),
-    Mood.excited: '007-Surprised_Ahhh.wav 010-Eh.wav 013-Surprised-Ahghh.wav 017-HuOoo.wav 017-Skreetc.wav 026-PstPstPst.wav 044-RRrAaaRw.wav'.split(),
-    Mood.hate: '019-KaYA.wav 030-Beewe.wav 031-Psspewpew.wav 032-Bewbewbeeew.wav'.split(),
-    Mood.idle: '002-Ahhh.wav 003-UmmMmmUmm.wav 006-EhMeEhmeUh.wav 009-Idle-Hum-01.wav 010-Hummmmmm.wav'.split(),
-    Mood.love: '003-Waaa.wav 008-AhhhAhh.wav 015-Meow.wav 017-Sensor-Touch-Excitement-02.wav 042-OHHHahhah.wav 007-OuuuUUO.wav 012-WhooooA.wav 016-Sensor-Touch-Excitement.wav 041-AhhhhUhh.wav '.split(),
-    Mood.terror: '003-Screetch.wav 006-Sigh-01.wav 007-Eurhura.wav 008-Huhurr.wav 013-0Bark.wav 027-Ruuufff.wav 043-Bbbaaah.wav 004-Ahhhh.wav 006-UhhhhOoE.wav 008-Ah.wav 009-Eheheur.wav 020-Whoap.wav 028-Erruruuff.wav 045-Wah.wav 005-Eurra.wav 006-Urhurra.wav 008-Eeh.wav 011-Ah-02.wav 027-Bark-04.wav 037-Eurrt.wav'.split(),
-    Mood.sounds: '001-Veep.wav 004-Sniff.wav 006-Sniffle.wav 010-Sniff-02.wav 034-Hicup.wav 003-Scratch.wav 005-Sigh-02.wav 007-Sneeze.wav 028-Snort.wav'.split(),
-    Mood.relaxed: '001-OooOooo.wav 002-Weerp.wav 005-OoAhhh.wav 012-Ahhhhh.wav 035-Eurraka.wav 002-Growl-01.wav 004-WhaooooO.wav 011-EhAhhh-Refreshed.wav 033-Ya.wav 036-Eurch.wav'.split()
+    Mood.acceptance: ['s_Acceptance.wav'],
+    Mood.amazement: ['s_Amazement.wav', 's_Amazement2.wav'],
+    Mood.anger: ['s_Anger.wav', 's_Anger2.wav', 's_Anger3.wav', 's_Anger4.wav'],
+    Mood.annoyance: ['s_Annoyance.wav', 's_Annoyance2.wav', 's_Annoyance3.wav', 's_Annoyance4.wav'],
+    Mood.awe: ['s_Awe.wav', 's_Awe2.wav', 's_Awe3.wav'],
+    Mood.boredom: ['s_Boredom.wav'],
+    Mood.disapproval: ['s_Disapproval.wav'],
+    Mood.disgust: ['s_Disgust.wav', 's_Disgust2.wav', 's_Disgust3.wav'],
+    Mood.disoriented_confused: ['s_DisorientedConfused.wav', 's_DisorientedConfused2.wav',
+                                's_DisorientedConfused3.wav', 's_DisorientedConfused4.wav',
+                                's_DisorientedConfused5.wav', 's_DisorientedConfused6.wav'],
+    Mood.distraction: ['s_Distraction.wav'],
+    Mood.ecstacy: ['s_Ecstacy.wav', 's_Ecstacy2.wav'],
+    Mood.fear: ['s_Fear.wav'],
+    Mood.grief: ['s_Grief.wav', 's_Grief2.wav', 's_Grief3.wav', 's_Grief4.wav'],
+    Mood.joy: ['s_Joy.wav', 's_Joy2.wav', 's_Joy3.wav', 's_Joy4.wav'],
+    Mood.loathing: ['s_Loathing.wav'],
+    Mood.love: ['s_Love.wav'],
+    Mood.phrase: ['s_PhraseByeBye.wav', 's_PhraseEvilAhHa.wav', 's_PhraseHello.wav', 's_PhraseNoNoNo.wav',
+                  's_PhraseOopsy.wav', 's_PhraseOwOwOw.wav', 's_PhraseOwwww.wav', 's_PhraseUhOh.wav'],
+    Mood.rage: ['s_Rage.wav'],
+    Mood.sadness: ['s_Sadness.wav', 's_Sadness2.wav', 's_Sadness3.wav', 's_Sadness4.wav', 's_Sadness5.wav',
+                   's_Sadness6.wav', 's_Sadness7.wav'],
+    Mood.sleepy: ['s_Sleepy.wav', 's_Sleepy2.wav', 's_Sleepy3.wav', 's_Sleepy4.wav', 's_SleepySnore.wav'],
+    Mood.system: ['s_SystemCameraShutter.wav', 's_SystemFailure.wav', 's_SystemSuccess.wav', 's_SystemWakeWord.wav']
 }
 
 
@@ -59,14 +91,14 @@ async def say(s, *, do_animation=True, mult=1.5):
     await play(name, do_animation=do_animation, mult=mult)
 
 
-async def play(name, *, do_animation=True, mult=1.0):
+async def play(name, *, how_long_secs: Optional[int] = None, do_animation=True, mult=1.0):
     """play a file on misty and animate by default"""
     from utils.misty.routines.movement import animate
     async with api.movement.reset_to_orig():
         try:
             if do_animation:
                 t = asyncio.create_task(animate(mult))
-            await api.audio.play(name, blocking=True)
+            await api.audio.play(name, blocking=True, how_long_secs=how_long_secs)
         finally:
             if do_animation:
                 t.cancel()
@@ -79,7 +111,8 @@ async def random_simpsons_quote():
 
 
 def __main():
-    asyncio.run(play_mood(Mood.love))
+    asyncio.run(random_sound())
+    # asyncio.run(play_mood(Mood.love))
     pass
 
 

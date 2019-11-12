@@ -51,7 +51,7 @@ async def smooth_jazz():
     return await wait_in_order(*coros)
 
 
-async def party_mode(how_long_secs=3, eyes=eyes, music: str = None):
+async def party_mode(how_long_secs=15, eyes=eyes, music: str = None):
     await bt.party_time
     _music_options = ('sfx--studiopolis.mp3', 'music--gandalf_sax.mp3', 'vgm--best--messenger_howling_grotto.mp3',
                       'vgm--best--mk7_credits.mp3', 'music--price_is_right.mp3')

@@ -11,8 +11,7 @@ from misty_py.utils import wait_for_group
 
 __author__ = 'acushner'
 
-
-__all__ = 'move_head move_arms search animate nod shake_head'.split()
+__all__ = 'move_head move_arms search animate nod shake_head search'.split()
 
 api = MistyAPI()
 
@@ -45,8 +44,10 @@ async def move_arms(l_max=50, r_max=50, velocity=60):
     """move arms randomly forever (until canceled)"""
 
     async def _move():
-        await api.movement.move_arms(l_position=_get_random(l_max), r_position=_get_random(r_max), l_velocity=velocity,
-                                     r_velocity=velocity)
+        largs = dict(l_position=_get_random(l_max), l_velocity=velocity)
+        rargs = dict(r_position=_get_random(r_max), r_velocity=velocity)
+        await api.movement.move_arms(**largs)
+        await api.movement.move_arms(**rargs)
 
     await _run_n(_move)
 
@@ -85,7 +86,7 @@ class MoveArms(NamedTuple):
         return res
 
 
-async def search(pitch_min=0, pitch_max=15, yaw_min=-60, yaw_max=60, velocity=15, do_reset=True):
+async def search(pitch_min=0, pitch_max=15, yaw_min=-100, yaw_max=100, velocity=30, do_reset=True):
     """have misty look around forever. good for searching for faces to recognize."""
     cb = EventCBUnchanged(4)
     async with api.movement.reset_to_orig(ignore=not do_reset), api.ws.sub_unsub(Actuator.yaw, cb):
@@ -95,7 +96,7 @@ async def search(pitch_min=0, pitch_max=15, yaw_min=-60, yaw_max=60, velocity=15
             cur += 1
             cur &= 1
             y = yaws[cur]
-            p = random.choice(range(pitch_min, pitch_max))
+            p = random.choice(range(pitch_min, pitch_max + 1))
             await asyncio.gather(
                 api.movement.move_head(pitch=p, yaw=y, velocity=velocity),
                 cb
