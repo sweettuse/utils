@@ -8,4 +8,5 @@ pandas
 uvloop
 pynput
 spacy
+click
 git+https://github.com/acushner-xaxis/misty_py.git
