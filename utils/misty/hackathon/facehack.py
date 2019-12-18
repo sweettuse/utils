@@ -5,11 +5,11 @@ from contextlib import asynccontextmanager
 from typing import Set, Union, List
 
 from utils.misty import Routine, arrow, search, api, SubPayload, SubType, wait_for_group, random_sound, say, Mood
+from utils.misty.hackathon.xmas_text import bxt
 
 __author__ = 'acushner'
 
 from utils.misty.hackathon.mood_mapper import good_posture, good_moods, bad_posture, eyes
-
 
 
 class _RecogFaceRoutine(Routine):
@@ -33,6 +33,7 @@ rfr = _RecogFaceRoutine()
 class State:
     def __init__(self, mood: Union[Mood, List[Mood]]):
         self.moods = [mood] if isinstance(mood, Mood) else mood
+        self.xmas_response = random.choice(bxt.nice) if mood in good_moods else random.choice(bxt.naughty)
 
     def say(self, text):
         """use google tts to say something on misty"""
@@ -74,10 +75,13 @@ class PersonalResponse:
     def __init__(self, name, misty_state: State):
         self.name = name
         self.misty_state = misty_state
+        self.xmas_response = misty_state.xmas_response
 
     async def respond(self):
         async with self.misty_state.set():
             await say(f'hey there {self.name}')
+            await asyncio.sleep(3)
+            await say(f'{self.xmas_response}')
 
 
 people = dict(ray=PersonalResponse('mr worldwide', State(Mood.amazement)))
