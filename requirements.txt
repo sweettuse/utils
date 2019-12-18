@@ -9,4 +9,5 @@ uvloop
 pynput
 spacy
 click
+silly
 git+https://github.com/acushner-xaxis/misty_py.git

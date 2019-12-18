@@ -28,7 +28,7 @@ class _AudioOption(dict):
                 continue
             return await play(r, do_animation=do_animation)
 
-        return await random_sound(Mood.excited)
+        return await random_sound(Mood.joy)
 
     def __getitem__(self, item):
         if isinstance(item, int):

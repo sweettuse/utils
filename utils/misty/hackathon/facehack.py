@@ -1,18 +1,13 @@
 import asyncio
 from collections import defaultdict
-from typing import Dict, Set
+from typing import Set, Union, List
 
-import arrow
-
-from utils.colors.colors import Colors
-from utils.misty import search, api, SubPayload, SubType, play, Routine, flash, eyes
-from utils.misty.core import UID
-from utils.misty.routines.text import bt
+from utils.misty import Routine, arrow, search, api, SubPayload, flash, play, Mood, SubType
 
 __author__ = 'acushner'
 
-colors = [Colors.COPILOT_BLUE, Colors.COPILOT_BLUE_GREEN, Colors.COPILOT_DARK_BLUE]
-images = eyes
+from utils.misty.routines.recognize_face import colors
+from utils.misty.routines.text import bt
 
 
 class _RecogFaceRoutine(Routine):
@@ -31,6 +26,29 @@ class _RecogFaceRoutine(Routine):
 
 
 rfr = _RecogFaceRoutine()
+
+
+class State:
+    def __init__(self, mood: Union[Mood, List[Mood]]):
+        self.mood = [mood] if isinstance(mood, Mood) else mood
+
+    def say(self, text):
+        """use google tts to say something on misty"""
+
+    def set_state(self):
+        """apply mood to misty. reset when done"""
+
+
+class Person:
+    def __init__(self, name, misty_state: State):
+        self.name = name
+        self.misty_state = misty_state
+
+    def respond(self):
+        pass
+
+
+people = dict(ray=Person('mr. worldwide', State(Mood.amazement)))
 
 
 class _LastAcked:
@@ -54,10 +72,6 @@ class RecognizeAndRespond:
     async def _init_search(self):
         self._search_task = asyncio.create_task(search(do_reset=False))
 
-    async def _init_names(self):
-        audio = await api.audio.list()
-        self._names = {n.split('_')[1] for n in audio if '_misty.wav' in n}
-
     async def _on_recognized(self, sp: SubPayload):
         """
         "eventName": "FaceRecognition-0001",
@@ -71,19 +85,16 @@ class RecognizeAndRespond:
             "trackId": 25
         """
         name = sp.data.message.personName
-        if name.startswith('ftuid'):
-            print(name)
+        person = people.get(name)
+        if person:
             if self._last_acked.set(name):
                 await self._respond(name)
-        # elif name.startswith('ray'):
-        #     self.
 
     async def _respond(self, name):
         if self._search_task:
             self._search_task.cancel()
         await asyncio.sleep(.2)
         await api.movement.halt()
-        await self._greet(name)
         await self._init_search()
 
     async def _greet(self, name):
@@ -103,10 +114,7 @@ class RecognizeAndRespond:
 
     async def run(self):
         try:
-            await asyncio.gather(
-                self._init_names(),
-                self._init_search()
-            )
+            await self._init_search()
             await self._subscribe()
             await asyncio.sleep(50)
         finally:
@@ -115,6 +123,10 @@ class RecognizeAndRespond:
 
 def __main():
     asyncio.run(RecognizeAndRespond().run())
+    pass
+
+
+def __main():
     pass
 
 
