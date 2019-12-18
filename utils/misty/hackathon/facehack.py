@@ -1,13 +1,15 @@
 import asyncio
+import random
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from typing import Set, Union, List
 
-from utils.misty import Routine, arrow, search, api, SubPayload, flash, play, Mood, SubType
+from utils.misty import Routine, arrow, search, api, SubPayload, SubType, wait_for_group, random_sound, say, Mood
 
 __author__ = 'acushner'
 
-from utils.misty.routines.recognize_face import colors
-from utils.misty.routines.text import bt
+from utils.misty.hackathon.mood_mapper import good_posture, good_moods, bad_posture, eyes
+
 
 
 class _RecogFaceRoutine(Routine):
@@ -30,25 +32,55 @@ rfr = _RecogFaceRoutine()
 
 class State:
     def __init__(self, mood: Union[Mood, List[Mood]]):
-        self.mood = [mood] if isinstance(mood, Mood) else mood
+        self.moods = [mood] if isinstance(mood, Mood) else mood
 
     def say(self, text):
         """use google tts to say something on misty"""
 
-    def set_state(self):
-        """apply mood to misty. reset when done"""
+    @asynccontextmanager
+    async def set(self):
+        """
+        have misty respond to person
+        - set posture
+        - set eyes
+        - move a bit?
+        - play a sound
+
+        - address person by name and funny xmas phrase
+        """
+        mood = random.choice(self.moods)
+
+        async with api.movement.reset_to_orig():
+            await wait_for_group(
+                self._set_posture(mood),
+                self._set_eyes(mood),
+                random_sound(mood)
+            )
+            yield
+
+    @staticmethod
+    async def _set_posture(mood):
+        f = good_posture if mood in good_moods else bad_posture
+        await f()
+
+    @staticmethod
+    async def _set_eyes(mood):
+        await api.images.display(random.choice(eyes[mood]))
 
 
-class Person:
+class PersonalResponse:
+    default_eyes = 'e_DefaultContent.jpg'
+
     def __init__(self, name, misty_state: State):
         self.name = name
         self.misty_state = misty_state
 
-    def respond(self):
-        pass
+    async def respond(self):
+        async with self.misty_state.set():
+            await say(f'hey there {self.name}')
 
 
-people = dict(ray=Person('mr. worldwide', State(Mood.amazement)))
+people = dict(ray=PersonalResponse('mr worldwide', State(Mood.amazement)))
 
 
 class _LastAcked:
@@ -88,25 +120,15 @@ class RecognizeAndRespond:
         person = people.get(name)
         if person:
             if self._last_acked.set(name):
-                await self._respond(name)
+                await self._respond(person)
 
-    async def _respond(self, name):
+    async def _respond(self, person: PersonalResponse):
         if self._search_task:
             self._search_task.cancel()
         await asyncio.sleep(.2)
         await api.movement.halt()
+        await person.respond()
         await self._init_search()
-
-    async def _greet(self, name):
-        t = asyncio.create_task(flash(colors, images, on_time_secs=.4, off_time_secs=.05, flashlight=False))
-        await bt.greeting
-        if name in self._names:
-            await play(UID.from_name(name).audio_misty)
-        else:
-            await rfr.forgot
-        await rfr.response
-        await bt.thanks
-        t.cancel()
 
     async def _subscribe(self):
         await api.faces.start_recognition()
@@ -122,11 +144,8 @@ class RecognizeAndRespond:
 
 
 def __main():
+    # print(eyes[Mood.amazement])
     asyncio.run(RecognizeAndRespond().run())
-    pass
-
-
-def __main():
     pass
 
 

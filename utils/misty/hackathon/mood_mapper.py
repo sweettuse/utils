@@ -1,5 +1,8 @@
 from enum import Enum
+
+from utils.misty import Mood
 from utils.misty.core import api
+
 
 import logging
 
@@ -7,59 +10,6 @@ __author__ = 'byi'
 
 log = logging.getLogger(__name__)
 
-
-class Mood(Enum):
-    acceptance = 'acceptance'
-    amazement = 'amazement'
-    anger = 'anger'
-    annoyance = 'annoyance'
-    awe = 'awe'
-    boredom = 'boredom'
-    disapproval = 'disapproval'
-    disgust = 'disgust'
-    disoriented_confused = 'disoriented_confused'
-    distraction = 'distraction'
-    ecstacy = 'ecstacy'
-    fear = 'fear'
-    grief = 'grief'
-    joy = 'joy'
-    loathing = 'loathing'
-    love = 'love'
-    phrase = 'phrase'
-    rage = 'rage'
-    sadness = 'sadness'
-    sleepy = 'sleepy'
-    sleepy_snore = 'sleepy_snore'
-    system = 'system'
-
-
-sounds = {
-    Mood.acceptance: ['s_Acceptance.wav'],
-    Mood.amazement: ['s_Amazement.wav', 's_Amazement2.wav'],
-    Mood.anger: ['s_Anger.wav', 's_Anger2.wav', 's_Anger3.wav', 's_Anger4.wav'],
-    Mood.annoyance: ['s_Annoyance.wav', 's_Annoyance2.wav', 's_Annoyance3.wav', 's_Annoyance4.wav'],
-    Mood.awe: ['s_Awe.wav', 's_Awe2.wav', 's_Awe3.wav'],
-    Mood.boredom: ['s_Boredom.wav'],
-    Mood.disapproval: ['s_Disapproval.wav'],
-    Mood.disgust: ['s_Disgust.wav', 's_Disgust2.wav', 's_Disgust3.wav'],
-    Mood.disoriented_confused: ['s_DisorientedConfused.wav', 's_DisorientedConfused2.wav',
-                                's_DisorientedConfused3.wav', 's_DisorientedConfused4.wav',
-                                's_DisorientedConfused5.wav', 's_DisorientedConfused6.wav'],
-    Mood.distraction: ['s_Distraction.wav'],
-    Mood.ecstacy: ['s_Ecstacy.wav', 's_Ecstacy2.wav'],
-    Mood.fear: ['s_Fear.wav'],
-    Mood.grief: ['s_Grief.wav', 's_Grief2.wav', 's_Grief3.wav', 's_Grief4.wav'],
-    Mood.joy: ['s_Joy.wav', 's_Joy2.wav', 's_Joy3.wav', 's_Joy4.wav'],
-    Mood.loathing: ['s_Loathing.wav'],
-    Mood.love: ['s_Love.wav'],
-    Mood.phrase: ['s_PhraseByeBye.wav', 's_PhraseEvilAhHa.wav', 's_PhraseHello.wav', 's_PhraseNoNoNo.wav',
-                  's_PhraseOopsy.wav', 's_PhraseOwOwOw.wav', 's_PhraseOwwww.wav', 's_PhraseUhOh.wav'],
-    Mood.rage: ['s_Rage.wav'],
-    Mood.sadness: ['s_Sadness.wav', 's_Sadness2.wav', 's_Sadness3.wav', 's_Sadness4.wav', 's_Sadness5.wav',
-                   's_Sadness6.wav', 's_Sadness7.wav'],
-    Mood.sleepy: ['s_Sleepy.wav', 's_Sleepy2.wav', 's_Sleepy3.wav', 's_Sleepy4.wav', 's_SleepySnore.wav'],
-    Mood.system: ['s_SystemCameraShutter.wav', 's_SystemFailure.wav', 's_SystemSuccess.wav', 's_SystemWakeWord.wav']
-}
 
 eyes = {
 
@@ -114,6 +64,8 @@ posture = {
                   'e_SystemLogoPrompt.jpg'],
 
 }
+
+good_moods = {Mood[m] for m in 'acceptance amazement awe ecstacy joy love phrase sleepy'.split()}
 
 
 async def good_posture():

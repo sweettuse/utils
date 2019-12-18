@@ -88,7 +88,7 @@ class MoveArms(NamedTuple):
 
 async def search(pitch_min=0, pitch_max=15, yaw_min=-100, yaw_max=100, velocity=30, do_reset=True):
     """have misty look around forever. good for searching for faces to recognize."""
-    cb = EventCBUnchanged(2, debug=True)
+    cb = EventCBUnchanged(2)
     async with api.movement.reset_to_orig(ignore=not do_reset), api.ws.sub_unsub(Actuator.yaw, cb):
         yaws = yaw_min, yaw_max
         cur = 0
