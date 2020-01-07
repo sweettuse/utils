@@ -108,7 +108,7 @@ people = dict(
     rouzbeh=PersonalResponse("hey Rouzbeh, I'm the Data Science now."),
     sara=PersonalResponse("hey Sara, looks like you are a cat lover who has a great sense of style"),
     tom=PersonalResponse("hello thomas 'steve' wagner, hope you have a nice day"),
-    victor=PersonalResponse("hey victor, we should hang out more, my number is 714.273.3723"),
+    victor=PersonalResponse("hey victor, we should hang out more, my number is 867.5309"),
     gerry=PersonalResponse("hey gerry, analyze this:", Mood.annoyance),
 )
 
