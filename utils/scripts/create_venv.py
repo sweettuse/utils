@@ -12,7 +12,7 @@ __author__ = 'acushner'
 def run(directory: str, version: str, name_override: str):
     """"""
     if not directory.startswith(('~', '/')):
-        raise ValueError('must path either full or ~ path')
+        raise ValueError('must provide either full or ~ path')
 
     directory = Path(directory).expanduser()
     name = name_override or directory.name
