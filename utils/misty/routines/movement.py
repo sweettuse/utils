@@ -88,7 +88,7 @@ class MoveArms(NamedTuple):
 
 async def search(pitch_min=0, pitch_max=15, yaw_min=-100, yaw_max=100, velocity=30, do_reset=True):
     """have misty look around forever. good for searching for faces to recognize."""
-    cb = EventCBUnchanged(4)
+    cb = EventCBUnchanged(2)
     async with api.movement.reset_to_orig(ignore=not do_reset), api.ws.sub_unsub(Actuator.yaw, cb):
         yaws = yaw_min, yaw_max
         cur = 0
@@ -97,6 +97,7 @@ async def search(pitch_min=0, pitch_max=15, yaw_min=-100, yaw_max=100, velocity=
             cur &= 1
             y = yaws[cur]
             p = random.choice(range(pitch_min, pitch_max + 1))
+            print('pitch, yay, vel', p, y, velocity)
             await asyncio.gather(
                 api.movement.move_head(pitch=p, yaw=y, velocity=velocity),
                 cb
@@ -109,7 +110,7 @@ async def animate(mult=1.0):
         await wait_for_group(move_arms(**MoveArms(mult).kwargs), move_head(**MoveHead(mult).kwargs))
 
 
-async def nod(pitch=40, roll=None, yaw=None, velocity=100, n_times=6):
+async def nod(pitch=40, roll=None, yaw=None, velocity=100, n_times=9):
     """have misty nod up and down"""
 
     async with api.movement.reset_to_orig():
@@ -136,7 +137,7 @@ async def shake_head(pitch=None, roll=None, yaw=-40, velocity=100, n_times=6):
 
 
 def __main():
-    asyncio.run(wait_for(search(), 20))
+    asyncio.run(wait_for(search(pitch_min=10, pitch_max=40, velocity=60), 20))
     # asyncio.run(wait_for(animate(2), 4))
     # asyncio.run(move_arms(n_times=10))
     # asyncio.run(asyncio.gather(*[move_head(velocity=100, roll_max=50, n_times=20), move_arms(n_times=20)]))

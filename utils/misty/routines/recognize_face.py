@@ -75,6 +75,8 @@ class RecognizeAndRespond:
             print(name)
             if self._last_acked.set(name):
                 await self._respond(name)
+        # elif name.startswith('ray'):
+        #     self.
 
     async def _respond(self, name):
         if self._search_task:

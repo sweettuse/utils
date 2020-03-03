@@ -81,7 +81,7 @@ async def touch_simpsons_quote():
 
 
 def __main():
-    async_run(respond_to_touch())
+    async_run(touch_simpsons_quote())
 
 
 if __name__ == '__main__':
