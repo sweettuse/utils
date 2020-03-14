@@ -1,13 +1,12 @@
 import os
 import pickle
+import sys
 from collections import deque
 from functools import wraps
 from io import BytesIO
+from itertools import islice
 from tempfile import NamedTemporaryFile
-from types import ModuleType
-from typing import Dict, Union, Tuple, List, Set, Iterable, Any
-import sys
-from inspect import isfunction
+from typing import Iterable, Any
 
 __author__ = 'acushner'
 
@@ -94,6 +93,30 @@ def enable_module_properties():
     new = sys.modules[name] = type(name, (type(mod),), props)(name)
     for k, v in body.items():
         setattr(new, k, v)
+
+
+class SliceableDeque(deque):
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return self._get_slice(item)
+        return super().__getitem__(item)
+
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            return self._set_slice(key, value)
+        return super().__setitem__(key, value)
+
+    def _get_slice(self, item: slice):
+        return type(self)(islice(self, item.start, item.stop, item.step))
+
+    def _set_slice(self, key: slice, value):
+        vals = self[key]
+        offset = key.start or 0
+        self.rotate(-offset)
+        for _ in range(len(vals)):
+            self.popleft()
+        self.extendleft(value)
+        self.rotate(offset)
 
 
 def __main():
