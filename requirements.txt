@@ -11,3 +11,4 @@ spacy
 click
 silly
 git+https://github.com/acushner-xaxis/misty_py.git
+git+https://github.com/sweettuse/lifxlan3.git

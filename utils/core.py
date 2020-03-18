@@ -6,9 +6,11 @@ from functools import wraps
 from io import BytesIO
 from itertools import islice
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Any
+from typing import Iterable, Any, NamedTuple
 
 __author__ = 'acushner'
+
+_sentinel = object()
 
 
 class Pickle:
@@ -115,8 +117,30 @@ class SliceableDeque(deque):
         self.rotate(-offset)
         for _ in range(len(vals)):
             self.popleft()
-        self.extendleft(value)
+        self.extendleft(reversed(make_iter(value)))
         self.rotate(offset)
+
+
+def make_iter(v, base_type=(str, bytes)):
+    if isinstance(v, base_type):
+        return [v]
+    try:
+        iter(v)
+        return v
+    except TypeError:
+        return [v]
+
+
+class Coord(NamedTuple):
+    x: int
+    y: int
+
+    def __add__(self, other):
+        return Coord(self.x + other[0], self.y + other[1])
+
+    @property
+    def manhattan(self):
+        return abs(self.x) + abs(self.y)
 
 
 def __main():
