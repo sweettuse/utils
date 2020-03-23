@@ -126,9 +126,9 @@ class ColorMatrix(List[List[RGB]]):
         """read a png in using pillow and convert to ColorMatrix"""
         im = Image.open(fn).convert('RGB')
         px = im.load()
-        return ColorMatrix([RGB(*px[c, r]).color
-                            for c in range(im.width)]
-                           for r in range(im.height))
+        return cls([RGB(*px[c, r]).color
+                    for c in range(im.width)]
+                   for r in range(im.height))
 
     @classmethod
     def from_shape(cls, shape: Shape = default_shape, default: RGB = default_color) -> 'ColorMatrix':
@@ -192,7 +192,7 @@ class ColorMatrix(List[List[RGB]]):
                 if col_info.first_valid <= c <= col_info.last_valid]
                for r, row in enumerate(self)
                if row_info.first_valid <= r <= row_info.last_valid)
-        return ColorMatrix(res)
+        return type(self)(res)
 
     def duplicates(self, sentinel_color: Optional[RGB] = None) -> DupesValids:
         """
@@ -236,7 +236,7 @@ class ColorMatrix(List[List[RGB]]):
     def get_range(self, rc0, rc1, default: RGB = default_color) -> 'ColorMatrix':
         """create new ColorMatrix from existing existing CM from the box bounded by rc0, rc1"""
         shape = rc1 - rc0
-        cm = ColorMatrix.from_shape(shape)
+        cm = type(self).from_shape(shape)
         for rc in rc0.to(rc1):
             c = default
             with suppress(IndexError):
@@ -284,7 +284,7 @@ class ColorMatrix(List[List[RGB]]):
 
     @property
     def color_str(self):
-        res = [80 * '=', f'ColorMatrix: Shape{self.shape}']
+        res = [80 * '=', f'{type(self).__name__}: Shape{self.shape}']
         # encode groups with (color, num_repeats) tuples for less overhead
         groups = (((c, sum(1 for _ in v)) for c, v in groupby(row)) for row in self)
         res.extend(''.join(c.color_str('  ' * total, set_bg=True) for c, total in row) for row in groups)
@@ -305,7 +305,7 @@ class ColorMatrix(List[List[RGB]]):
         """
         cast individual colors using the converter callable
         """
-        return ColorMatrix([converter(c) for c in row] for row in self)
+        return type(self)([converter(c) for c in row] for row in self)
 
     def resize(self, shape: Shape = (8, 8)) -> 'ColorMatrix':
         """resize image using pillow and return a new ColorMatrix"""
@@ -323,7 +323,7 @@ class ColorMatrix(List[List[RGB]]):
         y, x = shape
         im = im.resize((x, y), Image.ANTIALIAS)
         pixels = im.load()
-        res = ColorMatrix.from_shape(shape)
+        res = type(self).from_shape(shape)
 
         for c, r in product(range(im.width), range(im.height)):
             with suppress(IndexError):
