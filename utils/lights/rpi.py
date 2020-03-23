@@ -8,7 +8,9 @@ from lifxlan3.routines.tile.snek import run_as_ambiance, SnekSucceeds, SnekDead
 
 from utils.lights.tile_game_of_life import TileGameOfLife
 
-funcs = [run_as_ambiance, lambda: TileGameOfLife.from_random().run()]
+
+gol = lambda: TileGameOfLife.from_random().run()
+funcs = [run_as_ambiance, gol, gol]
 
 
 def run_on_rpi():

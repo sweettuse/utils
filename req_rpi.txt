@@ -1,0 +1,14 @@
+arrow
+google-cloud-speech
+google-cloud-texttospeech
+google-cloud-translate
+more-itertools
+numpy
+pandas
+uvloop
+pynput
+# spacy
+click
+silly
+git+https://github.com/acushner-xaxis/misty_py.git
+git+https://github.com/sweettuse/lifxlan3.git
