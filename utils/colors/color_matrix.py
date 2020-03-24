@@ -127,8 +127,8 @@ class ColorMatrix(List[List[RGB]]):
         im = Image.open(fn).convert('RGB')
         px = im.load()
         return cls([RGB(*px[c, r]).color
-                    for c in range(im.width)]
-                   for r in range(im.height))
+                            for c in range(im.width)]
+                           for r in range(im.height))
 
     @classmethod
     def from_shape(cls, shape: Shape = default_shape, default: RGB = default_color) -> 'ColorMatrix':

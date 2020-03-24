@@ -1,5 +1,4 @@
-__author__ = 'acushner'
-
+import os
 import time
 from collections import defaultdict
 import random
@@ -9,13 +8,17 @@ from lifxlan3 import Colors, timer
 from lifxlan3.routines.tile.core import set_cm
 from lifxlan3.routines.tile.tile_utils import RC, ColorMatrix
 
-from utils.game_of_life import GameOfLife, Patterns, Pattern
+from utils.game_of_life import GameOfLife, Patterns, Pattern, BigPatterns
 from utils.lights.color_func import ColorFunc, BaseColorFunc, PhaseColorFunc, default_color_func
+
+__author__ = 'acushner'
+
+tile_shape = RC(16, 16)
 
 
 class TileGameOfLife:
     def __init__(self, pattern: Pattern = Patterns.glider, color_func: ColorFunc = default_color_func,
-                 sleep_time=1, *, rotate_every: Optional[int] = None, shape=RC(16, 16), run_time_secs=60):
+                 sleep_time=1., *, rotate_every: Optional[int] = None, shape=tile_shape, run_time_secs=60):
         self._gol = GameOfLife.from_pattern(pattern)
         self._color_func = color_func
         self._rotate_every = rotate_every
@@ -32,7 +35,8 @@ class TileGameOfLife:
     @classmethod
     def from_random(cls):
         return cls(random.choice(list(Patterns)), BaseColorFunc.from_random(), sleep_time=random.random() + 1,
-                   rotate_every=int(random.random() > .5) and random.randrange(1, 4), run_time_secs=random.randint(60, 180))
+                   rotate_every=int(random.random() > .5) and random.randrange(1, 8),
+                   run_time_secs=random.randint(60, 180))
 
     @property
     def _cur_colors(self):
@@ -45,18 +49,20 @@ class TileGameOfLife:
         cm = ColorMatrix.from_colors(self._cur_colors, self._shape)
         if self._rotate_every:
             cm = cm.rotate_clockwise((self._cur_iteration // self._rotate_every) % 4)
-        if self._shape != RC(16, 16):
-            cm = cm.resize(RC(16, 16))
+        if self._shape <= tile_shape:
+            cm = cm.resize(tile_shape)
         return cm
 
     def tick(self):
         self._gol.tick()
         self._cur_iteration += 1
 
-    def run(self):
+    def run(self, *, in_terminal=False):
         start = time.time()
         while True:
-            set_cm(self.cm, strip=False)
+            if in_terminal:
+                os.system('clear')
+            set_cm(self.cm, strip=False, in_terminal=in_terminal, size=max(tile_shape, self._shape), verbose=False)
             self.tick()
             if time.time() - start > self._run_time_secs:
                 break
@@ -65,23 +71,22 @@ class TileGameOfLife:
 
 class TGOLSettings(NamedTuple):
     color_func: ColorFunc = default_color_func
-    sleep_time: int = 1
+    sleep_time: float = 1.
     rotate_every: Optional[int] = None
+    shape: RC = tile_shape
 
 
 pattern_settings = defaultdict(TGOLSettings)
 pattern_settings[Patterns.pulsar] = TGOLSettings(color_func=PhaseColorFunc(Colors.COPILOT_BLUE_GREEN, 46),
-                                                 rotate_every=1)
+                                                 rotate_every=0)
+pattern_settings[BigPatterns.two_engine_cordership] = TGOLSettings(shape=RC(48, 48), sleep_time=.2)
 
 
 def __main():
     # TileGameOfLife.from_random().run()
-    TileGameOfLife(Patterns.beacon).run()
-    # print(PhaseColorFunc.from_random())
-    # print(BaseColorFunc.from_random())
-    # print(choice(list(Patterns)))
-    # tgol = TileGameOfLife(Patterns.pulsar, color_func=DefaultColorFunc())
-    # TileGameOfLife.from_pattern(Patterns.pulsar).run()
+    # TileGameOfLife(Patterns.glider, color_func=default_color_func, sleep_time=.5).run(in_terminal=True)
+    TileGameOfLife.from_pattern(BigPatterns.two_engine_cordership).run(in_terminal=True)
+    TileGameOfLife.from_pattern(Patterns.pulsar).run(in_terminal=True)
 
 
 if __name__ == '__main__':

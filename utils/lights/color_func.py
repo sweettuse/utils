@@ -1,14 +1,17 @@
 import random
 from abc import ABC, abstractmethod
-from collections import Callable, deque
+from collections import deque
 from itertools import cycle
+from typing import Callable
 
 from lifxlan3 import Color, Themes, Theme, Colors
 from lifxlan3.routines.tile.tile_utils import RC, default_color
 
 __author__ = 'acushner'
 
-ColorFunc = None  # Callable[[RC, bool, int], Color]
+ColorFunc = Callable[[RC, bool, int], Color]
+
+# default_color = Colors.SNES_DARK_GREY
 
 
 def _choose_from(c_or_t):

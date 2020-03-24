@@ -10,6 +10,8 @@ import utils.core as U
 
 __author__ = 'acushner'
 
+_neighbor_offsets = {Coord(*xy) for xy in product(range(-1, 2), range(-1, 2))} - {Coord(0, 0)}
+
 
 class BSRule(NamedTuple):
     """born/survive rulestring
@@ -22,16 +24,15 @@ class BSRule(NamedTuple):
     @classmethod
     def from_str(cls, s):
         b, s = s.split('/')
-        return cls(frozenset(int(v) for v in b[1:]), frozenset(int(v) for v in s[1:]))
-
-
-_offsets = {Coord(*xy) for xy in product(range(-1, 2), range(-1, 2))}
-_offsets.remove(Coord(0, 0))
+        to_fs = lambda _s: frozenset(int(v) for v in _s[1:])
+        return cls(to_fs(b), to_fs(s))
 
 
 class GameOfLife:
-    def __init__(self, rule: BSRule, init_coords: Set[Coord]):
-        self.alive = init_coords
+    """conway's game of life"""
+
+    def __init__(self, rule: BSRule, alive: Set[Coord]):
+        self.alive = alive
         self.rule = rule
 
     @classmethod
@@ -39,9 +40,9 @@ class GameOfLife:
         return cls(p.rule, p.start)
 
     def tick(self):
-        neighbors = Counter(c + offset for c in self.alive for offset in _offsets)
-        res = {c for c, v in neighbors.items() if v in self.rule.born and c not in self.alive}
-        res.update(c for c in self.alive if neighbors[c] in self.rule.survive)
+        living_neighbor_count = Counter(c + offset for c in self.alive for offset in _neighbor_offsets)
+        res = {c for c, v in living_neighbor_count.items() if v in self.rule.born and c not in self.alive}
+        res.update(c for c in self.alive if living_neighbor_count[c] in self.rule.survive)
         self.alive = res
 
     def display(self, size=10):
@@ -52,6 +53,11 @@ class GameOfLife:
         print('=' * size)
 
 
+# ======================================================================================================================
+# game of life patterns
+# see https://www.conwaylife.com/wiki/Main_Page
+# ======================================================================================================================
+
 class Pattern(NamedTuple):
     rule: BSRule
     start: FrozenSet[Coord]
@@ -59,10 +65,10 @@ class Pattern(NamedTuple):
     @classmethod
     def _parse_file(cls, fn):
         with open(Path(__file__).parent / 'assets' / fn) as f:
-            return {Coord(c_num, r_num)
-                    for r_num, r in enumerate(l for l in f if not l.startswith('!'))
-                    for c_num, v in enumerate(r)
-                    if v == 'O'}
+            return frozenset(Coord(c_num, r_num)
+                             for r_num, r in enumerate(l for l in f if not l.startswith('!'))
+                             for c_num, v in enumerate(r)
+                             if v == 'O')
 
     @classmethod
     def from_file(cls, rule: BSRule, fn: str):
@@ -73,7 +79,7 @@ class Pattern(NamedTuple):
 class _pattern:
     """class property that simplifies creating patterns
 
-    if no `fn` is passed in, it will use the `name` as passed into `__set_name__`
+    if no filename is passed in, it will use the `name` as passed into `__set_name__`
     """
 
     def __set_name__(self, owner, name):
@@ -93,12 +99,12 @@ class _pattern:
 
 class PMeta(type):
     """simple Patterns metaclass"""
+
     def __iter__(cls):
         return (getattr(cls, n) for n, p in vars(cls).items() if isinstance(p, _pattern))
 
 
 class Patterns(metaclass=PMeta):
-    """good for tile use"""
     glider = _pattern()
     beacon = _pattern(offset=Coord(1, 1))
     pulsar = _pattern(offset=Coord(1, 1))
@@ -106,11 +112,14 @@ class Patterns(metaclass=PMeta):
     pentadecathlon = _pattern(offset=Coord(3, 6))
 
 
-class BigPatterns(Patterns):
+class BigPatterns(Patterns, metaclass=PMeta):
     two_engine_cordership = _pattern()
 
 
 def __main():
+    d = {}
+    d[Patterns.glider] = 4
+    return
     gol = GameOfLife.from_pattern(Patterns.pentadecathlon)
     for _ in range(15):
         gol.display(20)

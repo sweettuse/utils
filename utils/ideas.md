@@ -1,11 +1,10 @@
 ## for tile lights
-- conway game of life
-- arkanoid
-- flip through images
+- [x] conway game of life
+- [ ] arkanoid
+- [ ] flip through images
 
 
 #### for demo:
-
 - [x] fix misty's sounds/moods
 - [x] fix train face - test with lower volume?
 - [ ] calibrate misty
