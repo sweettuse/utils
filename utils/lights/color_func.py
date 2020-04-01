@@ -11,6 +11,7 @@ __author__ = 'acushner'
 
 ColorFunc = Callable[[RC, bool, int], Color]
 
+
 # default_color = Colors.SNES_DARK_GREY
 
 
@@ -84,6 +85,52 @@ class PhaseColorFunc(BaseColorFunc):
     def from_random(cls):
         return cls(_choose_from(Colors), random.randrange(13, 44))
 
+
+class DistColorFunc(BaseColorFunc):
+    """set colors based on distance from origin"""
+
+    def __init__(self, theme: Theme, dist_func: Callable[[RC, int], int]) -> None:
+        self._dist_func = dist_func
+        self._colors = list(_choose_from(theme))
+
+    def __call__(self, rc: RC, alive: bool, iteration: int) -> Color:
+        if alive:
+            return self._colors[(self._dist_func(rc, iteration)) % len(self._colors)]
+        return default_color
+
+    @classmethod
+    def from_random(cls):
+        return cls(_choose_from(Themes), random.choice(list(_dist_func_reg)))
+
+
+_dist_func_reg = set()
+
+
+def reg_dist_func(func):
+    _dist_func_reg.add(func)
+    return func
+
+
+@reg_dist_func
+def manhattan(rc: RC, iteration: int):
+    return abs(rc.r) + abs(rc.c)
+
+
+@reg_dist_func
+def quadrant(rc: RC, iteration: int):
+    res = 0
+    if rc < RC(8, 8):
+        res = 0
+    elif rc < RC(16, 8):
+        res = 1
+    elif rc < RC(8, 16):
+        res = 2
+    elif rc < RC(16, 16):
+        res = 3
+    return res + iteration
+
+
+# TODO: make inverted versions
 
 def __main():
     pass

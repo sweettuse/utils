@@ -2,6 +2,8 @@
 - [x] conway game of life
 - [ ] arkanoid
 - [ ] flip through images
+- [ ] breaking news/weather
+    - [ ] font to display parser
 
 
 #### for demo:

@@ -117,9 +117,6 @@ class BigPatterns(Patterns, metaclass=PMeta):
 
 
 def __main():
-    d = {}
-    d[Patterns.glider] = 4
-    return
     gol = GameOfLife.from_pattern(Patterns.pentadecathlon)
     for _ in range(15):
         gol.display(20)

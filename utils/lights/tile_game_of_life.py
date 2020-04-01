@@ -85,7 +85,7 @@ pattern_settings[BigPatterns.two_engine_cordership] = TGOLSettings(shape=RC(48, 
 def __main():
     # TileGameOfLife.from_random().run()
     # TileGameOfLife(Patterns.glider, color_func=default_color_func, sleep_time=.5).run(in_terminal=True)
-    TileGameOfLife.from_pattern(BigPatterns.two_engine_cordership).run(in_terminal=True)
+    # TileGameOfLife.from_pattern(BigPatterns.two_engine_cordership).run(in_terminal=True)
     TileGameOfLife.from_pattern(Patterns.pulsar).run(in_terminal=True)
 
 
