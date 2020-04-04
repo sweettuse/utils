@@ -41,7 +41,7 @@ class GameOfLife:
 
     def tick(self):
         living_neighbor_count = Counter(c + offset for c in self.alive for offset in _neighbor_offsets)
-        res = {c for c, v in living_neighbor_count.items() if v in self.rule.born and c not in self.alive}
+        res = {c for c, v in living_neighbor_count.items() if v in self.rule.born} - self.alive
         res.update(c for c in self.alive if living_neighbor_count[c] in self.rule.survive)
         self.alive = res
 
@@ -63,17 +63,17 @@ class Pattern(NamedTuple):
     start: FrozenSet[Coord]
 
     @classmethod
-    def _parse_file(cls, fn):
-        with open(Path(__file__).parent / 'assets' / fn) as f:
+    def _parse_file(cls, fname):
+        with open(Path(__file__).parent / 'assets' / fname) as f:
             return frozenset(Coord(c_num, r_num)
                              for r_num, r in enumerate(l for l in f if not l.startswith('!'))
                              for c_num, v in enumerate(r)
                              if v == 'O')
 
     @classmethod
-    def from_file(cls, rule: BSRule, fn: str):
-        fn = fn.rstrip('.cells') + '.cells'
-        return cls(rule, cls._parse_file(fn))
+    def from_file(cls, rule: BSRule, fname: str):
+        fname = fname.rstrip('.cells') + '.cells'
+        return cls(rule, cls._parse_file(fname))
 
 
 class _pattern:
@@ -83,14 +83,14 @@ class _pattern:
     """
 
     def __set_name__(self, owner, name):
-        p = Pattern.from_file(self._rule, self._fn or name)
+        p = Pattern.from_file(self._rule, self._fname or name)
         if self._offset != Coord(0, 0):
             p = Pattern(p.rule, frozenset(c + self._offset for c in p.start))
         self._pattern = p
 
-    def __init__(self, rs: str = 'B3/S23', fn: Optional[str] = None, offset=Coord(0, 0)):
+    def __init__(self, rs: str = 'B3/S23', fname: Optional[str] = None, offset=Coord(0, 0)):
         self._rule = BSRule.from_str(rs)
-        self._fn = fn
+        self._fname = fname
         self._offset = offset
 
     def __get__(self, instance, owner):
@@ -98,7 +98,7 @@ class _pattern:
 
 
 class PMeta(type):
-    """simple Patterns metaclass"""
+    """simple metaclass to make `Patterns` iterable"""
 
     def __iter__(cls):
         return (getattr(cls, n) for n, p in vars(cls).items() if isinstance(p, _pattern))
@@ -110,6 +110,7 @@ class Patterns(metaclass=PMeta):
     pulsar = _pattern(offset=Coord(1, 1))
     figure_eight = _pattern(offset=Coord(5, 5))
     pentadecathlon = _pattern(offset=Coord(3, 6))
+    diamond = _pattern(offset=Coord(2, 3), fname='4812diamond')
 
 
 class BigPatterns(Patterns, metaclass=PMeta):
@@ -117,9 +118,9 @@ class BigPatterns(Patterns, metaclass=PMeta):
 
 
 def __main():
-    gol = GameOfLife.from_pattern(Patterns.pentadecathlon)
-    for _ in range(15):
-        gol.display(20)
+    gol = GameOfLife.from_pattern(Patterns.diamond)
+    for _ in range(25):
+        gol.display(16)
         gol.tick()
         time.sleep(1)
 

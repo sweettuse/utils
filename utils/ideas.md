@@ -1,9 +1,10 @@
 ## for tile lights
 - [x] conway game of life
+    - [x] add transitions between states
 - [ ] arkanoid
 - [ ] flip through images
 - [ ] breaking news/weather
-    - [ ] font to display parser
+    - [ ] font-to-display parser
 
 
 #### for demo:

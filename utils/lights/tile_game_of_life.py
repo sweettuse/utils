@@ -17,13 +17,14 @@ tile_shape = RC(16, 16)
 
 
 class TileGameOfLife:
-    def __init__(self, pattern: Pattern = Patterns.glider, color_func: ColorFunc = default_color_func,
-                 sleep_time=1., *, rotate_every: Optional[int] = None, shape=tile_shape, run_time_secs=60):
+    def __init__(self, pattern: Pattern = Patterns.glider, color_func: ColorFunc = default_color_func, sleep_time=1.,
+                 *, rotate_every: Optional[int] = None, shape=tile_shape, run_time_secs=60, base_rotation=0):
         self._gol = GameOfLife.from_pattern(pattern)
         self._color_func = color_func
         self._rotate_every = rotate_every
         self._sleep_time = sleep_time
         self._shape = shape
+        self._base_rotation = base_rotation % 4
 
         self._cur_iteration = 0
         self._run_time_secs = run_time_secs
@@ -47,8 +48,11 @@ class TileGameOfLife:
     @timer
     def cm(self):
         cm = ColorMatrix.from_colors(self._cur_colors, self._shape)
+        rotate = self._base_rotation
         if self._rotate_every:
-            cm = cm.rotate_clockwise((self._cur_iteration // self._rotate_every) % 4)
+            rotate += self._cur_iteration // self._rotate_every
+        if rotate % 4:
+            cm = cm.rotate_clockwise(rotate % 4)
         if self._shape <= tile_shape:
             cm = cm.resize(tile_shape)
         return cm
@@ -59,13 +63,18 @@ class TileGameOfLife:
 
     def run(self, *, in_terminal=False):
         start = time.time()
-        while True:
+        transition_duration_msecs = 0
+        if random.random() < 1:
+            self._sleep_time += 3
+            transition_duration_msecs = 1000 * int(max(.5 * self._sleep_time, random.random() * self._sleep_time))
+
+        print('TRANS', transition_duration_msecs)
+        while time.time() - start <= self._run_time_secs:
             if in_terminal:
                 os.system('clear')
-            set_cm(self.cm, strip=False, in_terminal=in_terminal, size=max(tile_shape, self._shape), verbose=False)
+            set_cm(self.cm, strip=False, in_terminal=in_terminal, size=max(tile_shape, self._shape), verbose=False,
+                   duration_msec=transition_duration_msecs)
             self.tick()
-            if time.time() - start > self._run_time_secs:
-                break
             time.sleep(self._sleep_time)
 
 
@@ -84,9 +93,9 @@ pattern_settings[BigPatterns.two_engine_cordership] = TGOLSettings(shape=RC(48, 
 
 def __main():
     # TileGameOfLife.from_random().run()
-    # TileGameOfLife(Patterns.glider, color_func=default_color_func, sleep_time=.5).run(in_terminal=True)
+    TileGameOfLife(Patterns.pentadecathlon, color_func=default_color_func, sleep_time=.5, rotate_every=1).run()
     # TileGameOfLife.from_pattern(BigPatterns.two_engine_cordership).run(in_terminal=True)
-    TileGameOfLife.from_pattern(Patterns.pulsar).run(in_terminal=True)
+    # TileGameOfLife.from_pattern(Patterns.pulsar).run(in_terminal=True)
 
 
 if __name__ == '__main__':

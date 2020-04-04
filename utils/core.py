@@ -34,7 +34,7 @@ class Pickle:
 
 
 def exhaust(it: Iterable[Any]):
-    """consume an iterable. mostly used for side effects"""
+    """consume an iterable. used for side effects"""
     deque(it, maxlen=0)
 
 
@@ -49,7 +49,7 @@ def play_sound(file_or_path):
 
 
 def _wrap_property(prop):
-    """make it so property functions do not need `self` if defined at module level"""
+    """make it so module property functions do not need `self` if defined at module level"""
     new_props = {}
 
     def _create_func(func):
