@@ -68,19 +68,19 @@ def enable_module_properties():
     allow properties to be used at the module level
 
     to use, in the module, do something like:
-    >>> _b = 14
-    >>>
-    >>> @property
-    >>> def b():
-    >>>     return _b
-    >>>
-    >>> @b.setter
-    >>> def b(val)
-    >>>     global _b
-    >>>     _b = val
-    >>>
-    >>> if __name__ != '__main__':
-    >>>     enable_module_properties()
+    # >>> _b = 14
+    # >>>
+    # >>> @property
+    # >>> def b():
+    # >>>     return _b
+    # >>>
+    # >>> @b.setter
+    # >>> def b(val)
+    # >>>     global _b
+    # >>>     _b = val
+    # >>>
+    # >>> if __name__ != '__main__':
+    # >>>     enable_module_properties()
     """
     globs = sys._getframe(1).f_globals
     name = globs['__name__']
@@ -124,6 +124,8 @@ class SliceableDeque(deque):
 def make_iter(v, base_type=(str, bytes)):
     if isinstance(v, base_type):
         return [v]
+    if v is None:
+        return []
     try:
         iter(v)
         return v
@@ -140,12 +142,30 @@ class Coord(NamedTuple):
 
     @property
     def manhattan(self):
-        return abs(self.x) + abs(self.y)
+        return sum(map(abs, self))
 
 
 def __main():
-    pass
+    sd = SliceableDeque([1, 2, 3])
+    d = deque([1, 2, 3])
+    sd[2:2] = [4, 5, 6]
+    print(sd)
+
+
+# class aobject:
+#     """enable async init of objects"""
+#
+#     # NOTE: pycharm is wrong here
+#     async def __new__(cls, *args, **kwargs):
+#         instance = super().__new__(cls)
+#         await instance.__init__(*args, **kwargs)
+#         return instance
+
+
+def chunks(iterable: Iterable[Any], chunksize: int, return_type=list):
+    yield from iter(lambda it=iter(iterable): return_type(islice(it, chunksize)), return_type())
 
 
 if __name__ == '__main__':
+    print(list(chunks(range(12), 7)))
     __main()

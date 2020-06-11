@@ -2,18 +2,16 @@ import asyncio
 import os
 from contextlib import suppress
 from enum import Enum
-from typing import List, Dict
 from pathlib import Path
+from typing import List, Dict
 
 import pandas as pd
-from misty_py.utils import asyncpartial
-from more_itertools import always_iterable, flatten
+import requests
+from more_itertools import flatten
 
 from utils.aio.core import run_in_executor
 
 __author__ = 'acushner'
-
-import requests
 
 base_url = 'https://path.api.razza.dev/v1/stations/{}/realtime'
 
@@ -38,7 +36,15 @@ class Station(Enum):
         return base_url.format(self.value)
 
 
-t = requests.get(Station.grove_street.url).json()
+def _open_file():
+    fname = Path(_fn).expanduser()
+    header = not os.path.exists(fname)
+    os.makedirs(Path(_fn).parent.expanduser(), exist_ok=True)
+    return open(fname, 'a'), header
+
+
+_f, _header = _open_file()
+_fn = '~/.njpath/data.csv'
 
 
 async def _get_all():
@@ -54,20 +60,10 @@ def _get1(s: Station):
     return j.get('upcomingTrains')
 
 
-_f = None
-_fn = '~/.njpath/data.csv'
-
-
 def _write_out(res: List[Dict]):
-    header = False
-    global _f
-    if not _f:
-        fn = Path(_fn).expanduser()
-        header = not os.path.exists(fn)
-        os.makedirs(Path(_fn).parent.expanduser(), exist_ok=True)
-        _f = open(fn, 'a')
-
-    pd.DataFrame(res).to_csv(_f, index=False, header=header)
+    global _header
+    pd.DataFrame(res).to_csv(_f, index=False, header=_header)
+    _header = False
 
 
 async def _run():
