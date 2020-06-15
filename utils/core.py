@@ -1,8 +1,9 @@
 import os
+from memoize.wrapper import memoize
 import pickle
 import sys
 from collections import deque
-from functools import wraps
+from functools import wraps, partial
 from io import BytesIO
 from itertools import islice
 from tempfile import NamedTemporaryFile
@@ -152,18 +153,27 @@ def __main():
     print(sd)
 
 
-# class aobject:
-#     """enable async init of objects"""
-#
-#     # NOTE: pycharm is wrong here
-#     async def __new__(cls, *args, **kwargs):
-#         instance = super().__new__(cls)
-#         await instance.__init__(*args, **kwargs)
-#         return instance
+class aobject:
+    """enable async init of objects"""
+
+    async def _async__new__(cls, *args, **kwargs):
+        instance = super().__new__(cls)
+        await instance.__init__(*args, **kwargs)
+        return instance
+
+    __new__ = _async__new__
+    __await__: None
 
 
 def chunks(iterable: Iterable[Any], chunksize: int, return_type=list):
     yield from iter(lambda it=iter(iterable): return_type(islice(it, chunksize)), return_type())
+
+
+def async_memoize(func=None, *, configuration=None):
+    if func is None:
+        return partial(async_memoize, configuration=configuration)
+
+    return memoize(configuration=configuration)(func)
 
 
 if __name__ == '__main__':

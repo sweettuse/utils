@@ -110,6 +110,8 @@ class Patterns(metaclass=PMeta):
     pulsar = _pattern(offset=Coord(1, 1))
     figure_eight = _pattern(offset=Coord(5, 5))
     pentadecathlon = _pattern(offset=Coord(3, 6))
+    grmdat = _pattern(offset=Coord(2, 2))
+    grmdat2 = _pattern(offset=Coord(5, 5))
     diamond = _pattern(offset=Coord(2, 3), fname='4812diamond')
 
 
@@ -118,11 +120,11 @@ class BigPatterns(Patterns, metaclass=PMeta):
 
 
 def __main():
-    gol = GameOfLife.from_pattern(Patterns.diamond)
-    for _ in range(25):
+    gol = GameOfLife.from_pattern(Patterns.grmdat2)
+    for _ in range(24):
         gol.display(16)
         gol.tick()
-        time.sleep(1)
+        time.sleep(.5)
 
 
 if __name__ == '__main__':

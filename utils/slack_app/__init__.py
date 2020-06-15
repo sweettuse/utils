@@ -1,6 +1,9 @@
 import asyncio
+import time
 from enum import Enum
 from pathlib import Path
+from threading import Event
+from typing import NamedTuple
 
 import uvloop
 from misty_py.utils import json_obj
@@ -9,7 +12,7 @@ uvloop.install()
 
 _CONF = Path('~/.slack/config').expanduser()
 
-_loop = asyncio.get_event_loop()
+_loop: uvloop.Loop = asyncio.get_event_loop()
 
 __all__ = 'parse_config', 'UserType', 'ConvType', 'async_run'
 
@@ -27,7 +30,7 @@ class UserType(Enum):
     user = ''
 
 
-class ConvType:
+class ConvType(Enum):
     public_channel = 'public_channel'
     private_channel = 'private_channel'
     mpim = 'mpim'
@@ -35,4 +38,8 @@ class ConvType:
 
 
 def async_run(cor):
-    _loop.run_until_complete(cor)
+    if _loop.is_running():
+        f = asyncio.run_coroutine_threadsafe(cor, _loop)
+        f.result()
+    else:
+        _loop.run_until_complete(cor)
