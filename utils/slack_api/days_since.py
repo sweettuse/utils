@@ -4,8 +4,8 @@ from random import choice
 
 import arrow
 
-from utils.slack_app.app import SlackAPI
-from utils.slack_app import UserType, async_run
+from utils.slack_api.api import SlackAPI
+from utils.slack_api import UserType, async_run
 
 # actually one day ahead
 LAST_DRAG_DOWN_INCIDENT = arrow.get('2020-05-19')

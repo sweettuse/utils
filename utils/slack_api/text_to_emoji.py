@@ -1,8 +1,8 @@
 __author__ = 'acushner'
 
 from utils.font_to_bitmap import load_font, Font
-from utils.slack_app import UserType, async_run
-from utils.slack_app.app import SlackAPI
+from utils.slack_api import UserType, async_run
+from utils.slack_api.api import SlackAPI
 
 
 def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font()) -> str:

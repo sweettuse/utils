@@ -5,7 +5,7 @@ from typing import Optional, Any, Dict, List, Set, Iterable
 from slack import WebClient
 
 from utils.core import aobject, async_memoize, make_iter
-from utils.slack_app import parse_config, UserType, async_run
+from utils.slack_api import parse_config, UserType, async_run
 
 __author__ = 'acushner'
 
