@@ -1,17 +1,27 @@
 __author__ = 'acushner'
 
+from itertools import count
+
 from utils.font_to_bitmap import load_font, Font
 from utils.slack_api import UserType, async_run
 from utils.slack_api.api import SlackAPI
 
 
-def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font()) -> str:
-    res = font.render_text(s)
-    num_spaces = 6
+def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(), *, multiline=True) -> str:
     emoji = f':{emoji.replace(":", "")}:'
-    res = [_adjust_spaces([emoji if c else num_spaces * ' ' for c in row]) for row in res.bits]
-    prefix = '.\n' if _is_space(res[0][0]) else ''
-    return prefix + '\n'.join(map(''.join, res))
+
+    def helper(cur, n=0):
+        res = font.render_text(cur)
+        num_spaces = 6
+        res = [_adjust_spaces([emoji if c else num_spaces * ' ' for c in row]) for row in res.bits]
+        prefix = ''
+        if not n and _is_space(res[0][0]):
+            prefix = '.\n'
+        return prefix + '\n'.join(map(''.join, res))
+
+    if multiline:
+        return '\n\n'.join(helper(*args) for args in zip(s.split(), count()))
+    return helper(s)
 
 
 def _adjust_spaces(row):
@@ -50,8 +60,10 @@ async def run(channel: str, text: str):
 
 def __main():
     font = load_font('Courier New.ttf', 13)
-    font = load_font('Menlo.ttc', 13)
+    font = load_font('Comic Sans MS.ttf', 13)
+    # font = load_font('Menlo.ttc', 13)
     s = text_to_emoji('HH!', 'mustashman', font)
+    s = text_to_emoji('way 2 go', 'thumbsup', font)
     # s = text_to_emoji('TUSE', 'otomatone', load_font('Menlo.ttc', 9))
     # for emoji in 'tuse karl cushparrot'.split():
     #     print(size_check(emoji))

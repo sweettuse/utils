@@ -162,7 +162,7 @@ class aobject:
         return instance
 
     __new__ = _async__new__
-    __await__: None
+    __await__: None  # for pycharm type hinting
 
 
 def chunks(iterable: Iterable[Any], chunksize: int, return_type=list):

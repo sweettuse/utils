@@ -16,3 +16,4 @@ git+https://github.com/sweettuse/lifxlan3.git
 Pillow>=6.2.2
 requests>=2.22.0
 slackclient
+flask
