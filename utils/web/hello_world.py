@@ -5,13 +5,12 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
 
-
-@app.route('/slack/emojify')
+@app.route('/slack/emojify', methods=['POST'])
 def emojify():
-    with open('/tmp/flask_test', 'w') as f:
-        json.dump(request.json, f, indent=4)
-    return 'emojify'
+    print(request.get_data().decode())
+    print(request.form)
+    # print(str(request.get_json(force=True)))
+    # with open('/tmp/flask_test', 'a') as f:
+        # f.write(str(request.get_json(force=True)))
+    return ':cushparrot:'
