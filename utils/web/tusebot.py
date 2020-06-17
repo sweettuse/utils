@@ -9,6 +9,7 @@ from misty_py.utils import json_obj
 from utils.slack_api import UserType
 from utils.slack_api.api import SlackAPI
 from utils.slack_api.text_to_emoji import text_to_emoji
+from more_itertools import first
 
 app = Flask(__name__)
 
@@ -20,6 +21,15 @@ mock_form = dict([('token', '6fjPtJCoLaAdfpgGC0VHvKLE'), ('team_id', 'T03UGBWK0'
 
 _services = {}
 _slack_emoji = []
+
+
+# TODO: use slack secrets
+# TODO: change to use https:
+#   integrate with slack ca_cert check
+#   https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+# TODO: run multithreaded
+# TODO: split message smartly - slack does autosplitting so might end up with malformed lines on split
+# TODO: store user requests for analysis
 
 
 def _init_emoji():
@@ -62,9 +72,11 @@ def _dispatch(service):
 
 @register_service
 def emojify(si: SlackInfo):
-    text, emoji = si.argstr.rsplit(maxsplit=1)
+    text, *emoji = si.argstr.rsplit(maxsplit=1)
+    emoji = first(emoji, '')
     if not (emoji.startswith(':') and emoji.endswith(':')):
+        text = f'{text} {emoji}'.strip()
         emoji = random.choice(_slack_emoji)
-    return text_to_emoji(text, emoji)
+    return dict(response_type='in_channel', text=text_to_emoji(text, emoji))
 
 
