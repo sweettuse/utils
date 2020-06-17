@@ -20,7 +20,7 @@ def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(), *, mult
         return prefix + '\n'.join(map(''.join, res))
 
     if multiline:
-        return '\n\n'.join(helper(*args) for args in zip(s.split(), count()))
+        return (5 * '\n').join(helper(*args) for args in zip(s.split(), count()))
     return helper(s)
 
 
