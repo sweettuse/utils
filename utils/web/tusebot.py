@@ -24,6 +24,7 @@ _slack_emoji = []
 
 
 # TODO: use slack secrets
+#   https://api.slack.com/authentication/verifying-requests-from-slack
 # TODO: change to use https:
 #   integrate with slack ca_cert check
 #   https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
@@ -61,22 +62,29 @@ def register_service(func: Optional[Callable[[SlackInfo], Any]] = None, *, name:
     if name is None:
         name = func.__name__
 
+    name = name.lower()
     _services[name] = func
+
     return func
 
 
-@app.route('/slack/<service>', methods=['POST'])
-def _dispatch(service):
-    return _services[service](SlackInfo.from_data(request.form))
+@app.route('/slack', methods=['POST'])
+def _dispatch():
+    si = SlackInfo.from_data(request.form)
+    print(f'dispatching to {si.cmd!r}')
+    return _services[si.cmd](si)
 
 
 @register_service
-def emojify(si: SlackInfo):
+def emojify(si: SlackInfo, reverse=False):
     text, *emoji = si.argstr.rsplit(maxsplit=1)
     emoji = first(emoji, '')
     if not (emoji.startswith(':') and emoji.endswith(':')):
         text = f'{text} {emoji}'.strip()
         emoji = random.choice(_slack_emoji)
-    return dict(response_type='in_channel', text=text_to_emoji(text, emoji))
+    return dict(response_type='in_channel', text=text_to_emoji(text, emoji, reverse=reverse))
 
 
+@register_service
+def emojify_r(si: SlackInfo):
+    return emojify(si, True)

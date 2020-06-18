@@ -7,13 +7,14 @@ from utils.slack_api import UserType, async_run
 from utils.slack_api.api import SlackAPI
 
 
-def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(), *, multiline=True) -> str:
+def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(), *, multiline=True, reverse=False) -> str:
     emoji = f':{emoji.replace(":", "")}:'
+    fn = (lambda v: not v) if reverse else bool
 
     def helper(cur, n=0):
         res = font.render_text(cur)
         num_spaces = 6
-        res = [_adjust_spaces([emoji if c else num_spaces * ' ' for c in row]) for row in res.bits]
+        res = [_adjust_spaces([emoji if fn(c) else num_spaces * ' ' for c in row]) for row in res.bits]
         prefix = ''
         if not n and _is_space(res[0][0]):
             prefix = '.\n'
