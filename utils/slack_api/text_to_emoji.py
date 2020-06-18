@@ -1,20 +1,35 @@
 __author__ = 'acushner'
 
 from itertools import count
+from typing import List
 
-from utils.font_to_bitmap import load_font, Font
+from utils.font_to_bitmap import load_font, Font, Bitmap
 from utils.slack_api import UserType, async_run
 from utils.slack_api.api import SlackAPI
 
+NUM_SPACES = 6
 
-def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(), *, multiline=True, reverse=False) -> str:
+
+def _add_border(bm: Bitmap) -> List[List[int]]:
+    top_bottom = (bm.width + 2) * [0]
+    middle = ([0, *row, 0] for row in bm.bits)
+    return [top_bottom, *middle, top_bottom]
+
+
+def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
+                  *, multiline=True, reverse=False) -> str:
     emoji = f':{emoji.replace(":", "")}:'
-    fn = (lambda v: not v) if reverse else bool
+    if reverse:
+        transform_bit = lambda v: not v
+        transform_bitmap = _add_border
+    else:
+        transform_bit = bool
+        transform_bitmap = lambda v: v.bits
 
     def helper(cur, n=0):
         res = font.render_text(cur)
-        num_spaces = 6
-        res = [_adjust_spaces([emoji if fn(c) else num_spaces * ' ' for c in row]) for row in res.bits]
+        res = [_adjust_spaces([emoji if transform_bit(c) else NUM_SPACES * ' ' for c in row])
+               for row in transform_bitmap(res)]
         prefix = ''
         if not n and _is_space(res[0][0]):
             prefix = '.\n'
@@ -44,9 +59,8 @@ def _is_space(v):
 
 def size_check(emoji='cushparrot'):
     width = 31
-    num_spaces = 6
     emoji = f':{emoji.replace(":", "")}:'
-    with_spaces = _adjust_spaces([num_spaces * ' '] * (width - 1) + [emoji])
+    with_spaces = _adjust_spaces([NUM_SPACES * ' '] * (width - 1) + [emoji])
     with_emoji = [emoji] * width
     assert len(with_spaces) == len(with_emoji), 'fuck'
     res = [with_spaces, with_emoji]
@@ -64,7 +78,7 @@ def __main():
     font = load_font('Comic Sans MS.ttf', 13)
     # font = load_font('Menlo.ttc', 13)
     s = text_to_emoji('HH!', 'mustashman', font)
-    s = text_to_emoji('way 2 go', 'thumbsup', font)
+    s = text_to_emoji('way 2 go', 'thumbsup', font, reverse=True)
     # s = text_to_emoji('TUSE', 'otomatone', load_font('Menlo.ttc', 9))
     # for emoji in 'tuse karl cushparrot'.split():
     #     print(size_check(emoji))
