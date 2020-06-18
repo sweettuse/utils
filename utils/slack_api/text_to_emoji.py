@@ -11,8 +11,8 @@ NUM_SPACES = 6
 
 
 def _add_border(bm: Bitmap) -> List[List[int]]:
-    top_bottom = (bm.width + 2) * [0]
-    middle = ([0, *row, 0] for row in bm.bits)
+    top_bottom = (bm.width + 1) * [0]
+    middle = ([0, *row] for row in bm.bits)
     return [top_bottom, *middle, top_bottom]
 
 

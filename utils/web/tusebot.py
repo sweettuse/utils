@@ -24,13 +24,15 @@ _slack_emoji = []
 
 
 # TODO: use slack secrets
-#   https://api.slack.com/authentication/verifying-requests-from-slack
+#    - https://api.slack.com/authentication/verifying-requests-from-slack
 # TODO: change to use https:
-#   integrate with slack ca_cert check
-#   https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+#    - integrate with slack ca_cert check
+#    - https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
 # TODO: run multithreaded
 # TODO: split message smartly - slack does autosplitting so might end up with malformed lines on split
 # TODO: store user requests for analysis
+# TODO: add emoji from web
+#    - resize automatically
 
 
 def _init_emoji():
