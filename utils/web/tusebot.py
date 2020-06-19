@@ -57,7 +57,7 @@ class SlackInfo(NamedTuple):
     data: json_obj
 
     def __getattr__(self, item):
-        return data[item]
+        return self.data[item]
 
     @classmethod
     def from_data(cls, data):
@@ -118,6 +118,4 @@ def emojify_r(si: SlackInfo):
 @register_service
 def ping(si: SlackInfo):
     return _send_messages(si.response_url, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
-
-
 
