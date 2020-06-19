@@ -42,25 +42,27 @@ def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
 
 def _split_to_msgs(words: List[List[List[str]]]) -> List[str]:
     res = []
+    init = True
+    cur_msg = ''
     for word in words:
-        cur_msg = ''
-        split = True
+        if not init:
+            cur_msg += '\n\n'
         for row in word:
-            if split:
+            if init:
                 _adjust_for_init_whitespace(row)
-                split = False
+                init = False
 
             next_line = ''.join(row)
 
-            if len(cur_msg) + len(next_line) >= 3999:
+            if len(cur_msg) + len(next_line) >= 3998:
                 res.append(cur_msg)
-                cur_msg = next_line
-                split = True
+                _adjust_for_init_whitespace(row)
+                cur_msg = ''.join(row)
             else:
                 prefix = '\n' if cur_msg else ''
                 cur_msg += f'{prefix}{next_line}'
-        if cur_msg:
-            res.append(cur_msg)
+    if cur_msg:
+        res.append(cur_msg)
     return res
 
 

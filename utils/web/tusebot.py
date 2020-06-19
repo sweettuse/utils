@@ -3,6 +3,7 @@ import random
 from functools import partial
 from typing import NamedTuple, Optional, Any, Callable
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 from flask import Flask, request
 from misty_py.utils import json_obj
@@ -81,16 +82,20 @@ def register_service(func: Optional[Callable[[SlackInfo], Any]] = None, *, name:
 
 def _send_messages(response_url, *msgs, in_channel=True):
     """send multiple messages using a response url from a slack request"""
+    # TODO: try using the `channel_id` instead
     addl = {}
     if in_channel:
         addl['response_type'] = 'in_channel'
 
+    msg, *msgs = msgs
     def to_send():
+        time.sleep(.2)
         for msg in msgs:
             requests.post(response_url, json={'text': msg, **addl})
 
     _pool.submit(to_send)
-    return ''
+    
+    return {'text': msg, **addl}
 
 
 @app.route('/slack', methods=['POST'])
