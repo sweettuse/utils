@@ -33,6 +33,8 @@ _slack_emoji = []
 # TODO: store user requests for analysis
 # TODO: add emoji from web
 #    - resize automatically
+# TODO: add hints/resources for sprintly tests
+# TODO: any help with triage report?
 
 
 def _init_emoji():
