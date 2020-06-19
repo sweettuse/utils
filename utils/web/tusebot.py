@@ -2,9 +2,11 @@ import asyncio
 import random
 from functools import partial
 from typing import NamedTuple, Optional, Any, Callable
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, request
 from misty_py.utils import json_obj
+import requests
 
 from utils.slack_api import UserType
 from utils.slack_api.api import SlackAPI
@@ -21,6 +23,7 @@ mock_form = dict([('token', '6fjPtJCoLaAdfpgGC0VHvKLE'), ('team_id', 'T03UGBWK0'
 
 _services = {}
 _slack_emoji = []
+_pool = ThreadPoolExecutor(32)
 
 
 # TODO: use slack secrets
@@ -56,7 +59,8 @@ class SlackInfo(NamedTuple):
     @classmethod
     def from_data(cls, data):
         data = json_obj(data)
-        return cls(*data.text.strip().split(maxsplit=1), data)
+        cmd, *argstr = data.text.strip().split(maxsplit=1)
+        return cls(cmd, first(argstr, ''), data)
 
 
 def register_service(func: Optional[Callable[[SlackInfo], Any]] = None, *, name: Optional[str] = None):
@@ -70,6 +74,19 @@ def register_service(func: Optional[Callable[[SlackInfo], Any]] = None, *, name:
     _services[name] = func
 
     return func
+
+
+def _send_messages(response_url, *msgs, in_channel=True):
+    """send multiple messages using a response url from a slack request"""
+    addl = {}
+    if in_channel:
+        addl['response_type'] = 'in_channel'
+
+    def to_send():
+        for msg in msgs:
+            requests.post(response_url, json={'text': msg, **addl})
+
+    _pool.submit(to_send)
 
 
 @app.route('/slack', methods=['POST'])
@@ -92,3 +109,12 @@ def emojify(si: SlackInfo, reverse=False):
 @register_service
 def emojify_r(si: SlackInfo):
     return emojify(si, True)
+
+
+@register_service
+def ping(si: SlackInfo):
+    _send_messages(si.data.response_url, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
+    return ''
+
+
+
