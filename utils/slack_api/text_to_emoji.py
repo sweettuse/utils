@@ -1,8 +1,11 @@
 __author__ = 'acushner'
 
 from itertools import count
-from typing import List
+from typing import List, Union
 
+from slackblocks import SectionBlock, Text, TextType
+
+from utils.core import chunks, exhaust
 from utils.font_to_bitmap import load_font, Font, Bitmap
 from utils.slack_api import UserType, async_run
 from utils.slack_api.api import SlackAPI
@@ -17,7 +20,7 @@ def _add_border(bm: Bitmap) -> List[List[int]]:
 
 
 def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
-                  *, multiline=True, reverse=False) -> str:
+                  *, reverse=False) -> List[str]:
     emoji = f':{emoji.replace(":", "")}:'
     if reverse:
         transform_bit = lambda v: not v
@@ -26,18 +29,44 @@ def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
         transform_bit = bool
         transform_bitmap = lambda v: v.bits
 
-    def helper(cur, n=0):
-        res = font.render_text(cur)
-        res = [_adjust_spaces([emoji if transform_bit(c) else NUM_SPACES * ' ' for c in row])
-               for row in transform_bitmap(res)]
-        prefix = ''
-        if not n and _is_space(res[0][0]):
-            prefix = '.\n'
-        return prefix + '\n'.join(map(''.join, res))
+    def _to_emoji_list(text: str) -> List[List[str]]:
+        """return list of strings representing each row of a single line of emoji text"""
+        res = font.render_text(text)
+        return [_adjust_spaces([emoji if transform_bit(c) else NUM_SPACES * ' ' for c in row])
+                for row in transform_bitmap(res)]
 
-    if multiline:
-        return (5 * '\n').join(helper(*args) for args in zip(s.split(), count()))
-    return helper(s)
+    rows = [_to_emoji_list(word) for word in s.split()]
+    msgs = _split_to_msgs(rows)
+    return msgs
+
+
+def _split_to_msgs(words: List[List[List[str]]]) -> List[str]:
+    res = []
+    for word in words:
+        cur_msg = ''
+        split = True
+        for row in word:
+            if split:
+                _adjust_for_init_whitespace(row)
+                split = False
+
+            next_line = ''.join(row)
+
+            if len(cur_msg) + len(next_line) >= 3999:
+                res.append(cur_msg)
+                cur_msg = next_line
+                split = True
+            else:
+                prefix = '\n' if cur_msg else ''
+                cur_msg += f'{prefix}{next_line}'
+        if cur_msg:
+            res.append(cur_msg)
+    return res
+
+
+def _adjust_for_init_whitespace(l: List[str]):
+    if _is_space(l[0]):
+        l[0] = '.' + l[0][1:]
 
 
 def _adjust_spaces(row):
@@ -48,8 +77,6 @@ def _adjust_spaces(row):
             n += 1
             if not n % 4:
                 row[i] = v[:-1]
-            # if not n % 20:
-            #     row[i] = row[i][:-1]
     return row
 
 
@@ -57,15 +84,22 @@ def _is_space(v):
     return len(set(v)) == 1
 
 
-def size_check(emoji='cushparrot'):
-    width = 31
-    emoji = f':{emoji.replace(":", "")}:'
-    with_spaces = _adjust_spaces([NUM_SPACES * ' '] * (width - 1) + [emoji])
-    with_emoji = [emoji] * width
-    assert len(with_spaces) == len(with_emoji), 'fuck'
-    res = [with_spaces, with_emoji]
-    res = '\n'.join(map(''.join, res))
-    return '.\n' + res
+async def _blocks_time():
+    sa = await SlackAPI.from_user_type(UserType.user)
+    print(sa._privates.keys())
+    font = load_font('Comic Sans MS.ttf', 13)
+    blocks = text_to_emoji('abcdef', 'thumbsup', font, reverse=False)
+    print(len(blocks))
+    for cur_blocks in chunks(blocks, 50):
+        await sa.post_message('fake', blocks=cur_blocks)
+
+
+async def determine_msg_size():
+    """send message to slack and see how much fits before a message splits"""
+    msg = '|'.join(f'{n:04}' for n in range(1000))
+    # msg = [f'|{n:04}' for n in range(1000))
+    sa = await SlackAPI.from_user_type(UserType.bot)
+    await sa.post_message('fake', text=msg)
 
 
 async def run(channel: str, text: str):
@@ -73,18 +107,66 @@ async def run(channel: str, text: str):
     await sa.client.chat_postMessage(channel=channel, text=text)
 
 
+def play():
+    msg = '|'.join(f'{n:04}' for n in range(1000))
+
+
 def __main():
+    # return async_run(determine_msg_size())
+    # return async_run(_blocks_time())
     font = load_font('Courier New.ttf', 13)
     font = load_font('Comic Sans MS.ttf', 13)
     # font = load_font('Menlo.ttc', 13)
-    s = text_to_emoji('HH!', 'mustashman', font)
+    # s = text_to_emoji('h i', 'mustashman', font)
+    s = text_to_emoji('aaaaaaaaaaaaaaaa', 'mustashman', font, reverse=True)
+    exhaust(print, s)
+    return
     s = text_to_emoji('way 2 go', 'thumbsup', font, reverse=True)
     # s = text_to_emoji('TUSE', 'otomatone', load_font('Menlo.ttc', 9))
     # for emoji in 'tuse karl cushparrot'.split():
     #     print(size_check(emoji))
     print(s)
-    # async_run(run('dynamic-intelligent-line-items', s))
 
 
 if __name__ == '__main__':
     __main()
+
+# blocks playaround:
+# def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
+#                   *, multiline=True, reverse=False) -> Union[str, List[SectionBlock]]:
+#     emoji = f':{emoji.replace(":", "")}:'
+#     if reverse:
+#         transform_bit = lambda v: not v
+#         transform_bitmap = _add_border
+#     else:
+#         transform_bit = bool
+#         transform_bitmap = lambda v: v.bits
+#
+#     def helper(cur) -> List[SectionBlock]:
+#         rendered = font.render_text(cur)
+#         res = []
+#         for row in transform_bitmap(rendered):
+#             emoji_lst = [emoji if transform_bit(c) else NUM_SPACES * ' ' for c in row]
+#             res.append(SectionBlock(Text(_adjust_spaces(emoji_lst), TextType.PLAINTEXT, emoji=True)))
+#         return res
+#
+#     if multiline:
+#         return [block for word in s.split() for block in helper(word)]
+#     return helper(s)
+#
+#
+# def _adjust_spaces(row):
+#     """it's slightly less than 6 spaces per emoji, so we need to account for that"""
+#     n = 0
+#     for i, v in enumerate(row):
+#         if _is_space(v):
+#             if i == 0:
+#                 row[0] = '.' + v[1:]
+#             n += 1
+#             if not n % 4:
+#                 row[i] = v[:-1]
+#             # if not n % 20:
+#             #     row[i] = row[i][:-1]
+#     return ''.join(row)
+#
+#

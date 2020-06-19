@@ -56,6 +56,9 @@ class SlackInfo(NamedTuple):
     argstr: str
     data: json_obj
 
+    def __getattr__(self, item):
+        return data[item]
+
     @classmethod
     def from_data(cls, data):
         data = json_obj(data)
@@ -87,6 +90,7 @@ def _send_messages(response_url, *msgs, in_channel=True):
             requests.post(response_url, json={'text': msg, **addl})
 
     _pool.submit(to_send)
+    return ''
 
 
 @app.route('/slack', methods=['POST'])
@@ -103,7 +107,7 @@ def emojify(si: SlackInfo, reverse=False):
     if not (emoji.startswith(':') and emoji.endswith(':')):
         text = f'{text} {emoji}'.strip()
         emoji = random.choice(_slack_emoji)
-    return dict(response_type='in_channel', text=text_to_emoji(text, emoji, reverse=reverse))
+    return _send_messages(si.response_url, *text_to_emoji(text, emoji, reverse=reverse))
 
 
 @register_service
@@ -113,8 +117,7 @@ def emojify_r(si: SlackInfo):
 
 @register_service
 def ping(si: SlackInfo):
-    _send_messages(si.data.response_url, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
-    return ''
+    return _send_messages(si.response_url, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
 
 
 

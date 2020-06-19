@@ -34,9 +34,14 @@ class Pickle:
                 pickle.dump(val, f)
 
 
-def exhaust(it: Iterable[Any]):
-    """consume an iterable. used for side effects"""
-    deque(it, maxlen=0)
+def exhaust(iterable_or_fn, *args: Iterable[Any]):
+    """consume an iterable. used for side effects.
+
+    if `args`, treat `iterable_or_fn` as fn and `map(fn, *args)`
+    """
+    if args:
+        iterable_or_fn = map(iterable_or_fn, *args)
+    deque(iterable_or_fn, maxlen=0)
 
 
 def play_sound(file_or_path):

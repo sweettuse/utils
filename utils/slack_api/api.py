@@ -2,9 +2,11 @@ from itertools import chain
 from random import choice
 from typing import Optional, Any, Dict, List, Set, Iterable
 
+from misty_py.utils import json_obj
 from slack import WebClient
+from slackblocks import SectionBlock, Message
 
-from utils.core import aobject, async_memoize, make_iter
+from utils.core import aobject, async_memoize, make_iter, exhaust
 from utils.slack_api import parse_config, UserType, async_run
 
 __author__ = 'acushner'
@@ -67,10 +69,22 @@ class SlackAPI(aobject):
         res = await self._paginate(self.client.conversations_members, _response_key='members', channel=channel)
         return set(res)
 
+    @async_memoize
     async def get_copilot_users(self):
         """use oasis to get data about all copilot users"""
         user_ids = await self.get_channel_members('oasis')
         return await self._user_ids_to_data(user_ids)
+
+    async def post_message(self, channel, *, text: Optional[str] = None, blocks: Optional[List[SectionBlock]] = None):
+        channel = self.conv_id(channel)
+        print(channel)
+        if bool(text) + bool(blocks) != 1:
+            raise ValueError('set exactly one of `text` and `blocks`')
+        if blocks:
+            msg = Message(channel=channel, blocks=blocks)
+            await self.client.chat_postMessage(**msg)
+        else:
+            await self.client.chat_postMessage(channel=channel, text=text)
 
     async def _user_ids_to_data(self, user_ids: Iterable[str], user_data: Optional[DataStore] = None):
         """given an iterable of user ids, create a DataStore with the user data"""
