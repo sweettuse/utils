@@ -16,3 +16,4 @@ flask
 requests>=2.22.0
 slackclient
 freetype-py
+sanic
