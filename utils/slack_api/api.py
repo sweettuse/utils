@@ -37,8 +37,11 @@ class SlackAPI(aobject):
         res = await self.client.conversations_list(types='private_channel')
         return DataStore(res['channels'], 'name', 'id')
 
-    def conv_id(self, conv_name):
-        return self._privates[conv_name]['id']
+    def channel_id(self, channel_name):
+        channel_data = self._privates.get(channel_name)
+        if channel_data:
+            return channel_data['id']
+        return channel_name
 
     @async_memoize
     async def get_users(self) -> DataStore:
@@ -65,7 +68,7 @@ class SlackAPI(aobject):
     @async_memoize
     async def get_channel_members(self, channel) -> Set[str]:
         """get user_ids for a particular conversation"""
-        channel = self.conv_id(channel)
+        channel = self.channel_id(channel)
         res = await self._paginate(self.client.conversations_members, _response_key='members', channel=channel)
         return set(res)
 
@@ -76,8 +79,7 @@ class SlackAPI(aobject):
         return await self._user_ids_to_data(user_ids)
 
     async def post_message(self, channel, *, text: Optional[str] = None, blocks: Optional[List[SectionBlock]] = None):
-        channel = self.conv_id(channel)
-        print(channel)
+        channel = self.channel_id(channel)
         if bool(text) + bool(blocks) != 1:
             raise ValueError('set exactly one of `text` and `blocks`')
         if blocks:

@@ -1,0 +1,16 @@
+- [ ] use slack secrets
+   - https://api.slack.com/authentication/verifying-requests-from-slack
+- [ ] change to use https:
+   - integrate with slack ca_cert check
+   - https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+- [x] run multithreaded (switched to sanic - just multiple processes)
+- [x] split message smartly
+    - [x] split according to `response_url`
+    - [x] split by sending messages directly to conversation
+    - [ ] add splits at word boundaries
+- [ ] store user requests for analysis
+- [ ] add emoji from web
+   - resize automatically
+- [ ] add hints/resources for sprintly tests
+- [ ] any help with triage report?
+- [ ] add documentation/help command
