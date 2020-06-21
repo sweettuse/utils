@@ -42,15 +42,11 @@ def text_to_emoji(s: str, emoji='blob-turtle', font: Font = load_font(),
 
 def _split_to_msgs(words: List[List[List[str]]]) -> List[str]:
     res = []
-    init = True
-    cur_msg = ''
     for word in words:
-        if not init:
-            cur_msg += '\n\n'
+        cur_msg = ''
         for row in word:
-            if init:
+            if not cur_msg:
                 _adjust_for_init_whitespace(row)
-                init = False
 
             next_line = ''.join(row)
 
@@ -61,8 +57,8 @@ def _split_to_msgs(words: List[List[List[str]]]) -> List[str]:
             else:
                 prefix = '\n' if cur_msg else ''
                 cur_msg += f'{prefix}{next_line}'
-    if cur_msg:
-        res.append(cur_msg)
+        if cur_msg:
+            res.append(cur_msg)
     return res
 
 
