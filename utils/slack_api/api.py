@@ -1,12 +1,14 @@
 from itertools import chain
+from pathlib import Path
 from random import choice
-from typing import Optional, Any, Dict, List, Set, Iterable
+from typing import Optional, Any, Dict, List, Set, Iterable, Union
 
-from misty_py.utils import json_obj
 from slack import WebClient
-from slackblocks import SectionBlock, Message
+from slackblocks import Message
+from slackblocks.blocks import Block
 
-from utils.core import aobject, async_memoize, make_iter, exhaust
+import utils.core as U
+from utils.core import aobject, async_memoize, make_iter
 from utils.slack_api import parse_config, UserType, async_run
 
 __author__ = 'acushner'
@@ -78,12 +80,14 @@ class SlackAPI(aobject):
         user_ids = await self.get_channel_members('oasis')
         return await self._user_ids_to_data(user_ids)
 
-    async def post_message(self, channel, *, text: Optional[str] = None, blocks: Optional[List[SectionBlock]] = None):
+    async def post_message(self, channel,
+                           *, text: Optional[str] = None,
+                           blocks: Optional[Union[Block, List[Block]]] = None):
         channel = self.channel_id(channel)
-        if bool(text) + bool(blocks) != 1:
+        if (text is not None) + (blocks is not None) != 1:
             raise ValueError('set exactly one of `text` and `blocks`')
         if blocks:
-            msg = Message(channel=channel, blocks=blocks)
+            msg = Message(channel=channel, blocks=U.make_iter(blocks))
             await self.client.chat_postMessage(**msg)
         else:
             await self.client.chat_postMessage(channel=channel, text=text)
@@ -92,6 +96,16 @@ class SlackAPI(aobject):
         """given an iterable of user ids, create a DataStore with the user data"""
         user_data = user_data or await self.get_users()
         return DataStore([user_data[uid] for uid in user_ids], 'name', 'id', 'real_name')
+
+    async def post_file(self, channel: str, fname: str, file_type: str = 'txt'):
+        with open(fname) as f:
+            content = f.read()
+        title = Path(fname).name
+        await self.post_in_mem_file(channel, content, title, file_type)
+
+    async def post_in_mem_file(self, channel, content: str, title='from python', file_type='txt'):
+        await self.client.files_upload(content=content, channels=self.channel_id(channel), filetype=file_type,
+                                       title=title)
 
     @staticmethod
     async def _paginate(client_func, *args, _response_key: Optional[str] = None, **kwargs):
@@ -112,13 +126,8 @@ class SlackAPI(aobject):
         return res
 
 
-def to_html(name, image):
-    return f'{name}<br><img src="{image}"><br>'
-
-
 async def run():
     sa = await SlackAPI.from_user_type(UserType.bot)
-    t = await sa.get_copilot_users()
 
 
 def __main():

@@ -24,12 +24,12 @@ async def update_days_since(group='poc_crew'):
     emoji = choice(list(await sa.get_emoji()))
     topic = f":{emoji}: it's been -{drag_down}- days since an excel drag-down related incident and -{misinform}- days since misinformation"
     print(topic)
-    await sa.client.conversations_setTopic(channel=sa.conv_id(group), topic=topic)
+    await sa.client.conversations_setTopic(channel=sa.channel_id(group), topic=topic)
 
 
 async def run():
     sa = await SlackAPI.from_user_type(UserType.bot)
-    await sa.client.chat_postMessage(channel=sa.conv_id('copilot-test'), text='testing linking @john.hoffman!',
+    await sa.client.chat_postMessage(channel=sa.channel_id('copilot-test'), text='testing linking @john.hoffman!',
                                      link_names=True)
 
 

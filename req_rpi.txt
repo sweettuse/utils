@@ -1,15 +1,14 @@
-arrow
+arrow>=0.15.6
 google-cloud-speech
 google-cloud-texttospeech
 google-cloud-translate
 more-itertools
 numpy
-pandas
-uvloop
-pynput
-# spacy
-click
-silly
+pandas>=0.25.3
+uvloop>=0.14.0
+pynput>=1.4.5
+click>=7.1.2
+silly>=1.1.0
 git+https://github.com/acushner-xaxis/misty_py.git
 git+https://github.com/sweettuse/lifxlan3.git
 flask
@@ -17,3 +16,4 @@ requests>=2.22.0
 slackclient
 freetype-py
 sanic
+slackblocks

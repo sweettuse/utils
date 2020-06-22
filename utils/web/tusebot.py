@@ -37,11 +37,15 @@ class SlackInfo(NamedTuple):
     @classmethod
     def from_data(cls, data):
         data = _flatten_form(data)
-        cmd, *argstr = data.text.strip().split(maxsplit=1)
+        if 'text' in data:
+            cmd, *argstr = data.text.strip().split(maxsplit=1)
+        else:
+            cmd, argstr = '', ['']
         return cls(cmd, first(argstr, ''), data)
 
 
-def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None, *, name: Optional[str] = None):
+def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
+                 *, name: Optional[str] = None):
     """register cmd to be accessible from slack command
 
     if passed a name, use that as cmd name, otherwise just use name of function"""
@@ -57,9 +61,9 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None, *, name: Opt
     return func
 
 
-def _flatten_form(form):
+def _flatten_form(form) -> json_obj:
     """transform {k: [v]} -> {k: v}"""
-    return json_obj((k, first(v) if len(v) == 1 else v) for k, v in form.items())
+    return json_obj((k, first(v) if isinstance(v, list) and len(v) == 1 else v) for k, v in form.items())
 
 
 @app.route('/slack', methods=['POST'])
@@ -105,12 +109,12 @@ async def emojify(si: SlackInfo, *, reverse=False):
 @register_cmd
 async def emojify_i(si: SlackInfo):
     """text [emoji]
-    inverted form of `emojify`"""
+    inverted form of _*emojify*_"""
     await emojify(si, reverse=True)
 
 
 @register_cmd
-async def ping(si: SlackInfo):
+async def _ping(si: SlackInfo):
     """text
     stupid test function"""
     await _send_to_channel(si.channel_id, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
@@ -119,7 +123,7 @@ async def ping(si: SlackInfo):
 @register_cmd
 async def spam(si: SlackInfo):
     """text
-    send each word in `text` to channel, uppercase, one word per line"""
+    send each word in _text_ to channel, uppercase, one word per line"""
     await _send_to_channel(si.channel_id, *map(str.upper, si.argstr.split()))
 
 
@@ -127,7 +131,7 @@ async def spam(si: SlackInfo):
 async def help_(_: SlackInfo):
     """
     show this message"""
-    return text(f'what can _*tuse*_ do for you?\n\n{_gen_help_str()}')
+    return text(f'unloose the *tuse*:\n\n{_gen_help_str()}')
 
 
 # ======================================================================================================================
@@ -145,7 +149,7 @@ def _run_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     server = app.create_server(host="0.0.0.0", port=31415, return_asyncio_server=True)
-    loop.create_task(_init_slack_api())
+    loop.run_until_complete(_init_slack_api())
     loop.create_task(server)
     loop.run_forever()
 
