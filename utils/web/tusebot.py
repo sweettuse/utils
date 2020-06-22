@@ -8,7 +8,7 @@ from more_itertools import first
 from sanic import Sanic
 from sanic.response import empty, text
 
-from utils.slack_api import UserType
+from utils.slack_api import UserType, ssl_dict
 from utils.slack_api.api import SlackAPI
 from utils.slack_api.text_to_emoji import text_to_emoji
 
@@ -145,10 +145,11 @@ async def _init_slack_api():
     _slack_api = (await SlackAPI.from_user_type(UserType.bot))
 
 
-def _run_server():
+def _run_server(*, enable_ssl=False):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    server = app.create_server(host="0.0.0.0", port=31415, return_asyncio_server=True)
+    ssl = ssl_dict if enable_ssl else None
+    server = app.create_server(host="0.0.0.0", port=31415, return_asyncio_server=True, ssl=ssl)
     loop.run_until_complete(_init_slack_api())
     loop.create_task(server)
     loop.run_forever()
@@ -162,5 +163,4 @@ def _gen_help_str():
 
 
 if __name__ == '__main__':
-    # print(_gen_help_str())
-    _run_server()
+    _run_server(enable_ssl=False)

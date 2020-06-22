@@ -1,39 +1,52 @@
 __author__ = 'acushner'
 
 from random import choice
+from typing import NamedTuple
 
 import arrow
 
 from utils.slack_api.api import SlackAPI
 from utils.slack_api import UserType, async_run
 
-# actually one day ahead
-LAST_DRAG_DOWN_INCIDENT = arrow.get('2020-05-19')
-LAST_TOBY_MISINFORMATION = arrow.get('2020-06-13')
+
+class Incident(NamedTuple):
+    date: str
+    desc: str
+
+    @property
+    def n_days(self):
+        return (arrow.utcnow() - arrow.get(self.date)).days
+
+    def __str__(self):
+        return f'-{self.n_days}- days since {self.desc}'
+
+    def with_emoji(self, emoji):
+        return f':{emoji}: {str(self)}'
 
 
-def _get_days():
-    now = arrow.utcnow()
-    return ((now - i).days + 1 for i in (LAST_DRAG_DOWN_INCIDENT, LAST_TOBY_MISINFORMATION))
+_incidents = [
+    Incident('2020-05-18', 'an excel drag-down related incident'),
+    Incident('2020-06-12', 'misinformation'),
+    Incident('2020-06-22', 'a considerable brain fart'),
+]
 
 
-async def update_days_since(group='poc_crew'):
+async def update_days_since(channel='poc_crew'):
     sa = await SlackAPI.from_user_type(UserType.bot)
-    drag_down, misinform = _get_days()
-
-    emoji = choice(list(await sa.get_emoji()))
-    topic = f":{emoji}: it's been -{drag_down}- days since an excel drag-down related incident and -{misinform}- days since misinformation"
+    strs = [i.with_emoji(await sa.random_emoji) for i in _incidents]
+    topic = "it's been " + ' and '.join(strs)
     print(topic)
-    await sa.client.conversations_setTopic(channel=sa.channel_id(group), topic=topic)
+    await sa.client.conversations_setTopic(channel=sa.channel_id(channel), topic=topic)
 
 
 async def run():
     sa = await SlackAPI.from_user_type(UserType.bot)
-    await sa.client.chat_postMessage(channel=sa.channel_id('copilot-test'), text='testing linking @john.hoffman!',
+    await sa.client.chat_postMessage(channel=sa.channel_id('poc_crew'), text='thank you, @john.hoffman!',
                                      link_names=True)
 
 
 def __main():
+    # print(list(_get_days()))
     async_run(update_days_since())
 
 

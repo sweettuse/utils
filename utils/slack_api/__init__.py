@@ -10,11 +10,14 @@ from misty_py.utils import json_obj
 
 uvloop.install()
 
-_CONF = Path('~/.slack/config').expanduser()
+_CONF_DIR = Path('~/.slack').expanduser()
+_CONF = _CONF_DIR / 'config'
 
 _loop: uvloop.Loop = asyncio.get_event_loop()
 
-__all__ = 'parse_config', 'UserType', 'ConvType', 'async_run'
+__all__ = 'parse_config', 'UserType', 'ConvType', 'async_run', 'ssl_dict'
+
+ssl_dict = dict(cert=str(_CONF_DIR / 'cert.pem'), key=str(_CONF_DIR / 'key.pem'))
 
 
 def parse_config(conf=_CONF):
