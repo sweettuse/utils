@@ -5,9 +5,9 @@ import sys
 from collections import deque
 from functools import wraps, partial
 from io import BytesIO
-from itertools import islice
+from itertools import islice, chain
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Any, NamedTuple
+from typing import Iterable, Any, NamedTuple, List, Dict
 
 __author__ = 'acushner'
 
@@ -179,6 +179,16 @@ def async_memoize(func=None, *, configuration=None):
         return partial(async_memoize, configuration=configuration)
 
     return memoize(configuration=configuration)(func)
+
+
+class DataStore(dict):
+    """mapping of one or more of a dict's keys to the dict itself"""
+    def __init__(self, data: List[Dict[str, Any]], key: str, *keys: str):
+        super().__init__()
+        self._keys = chain([key], keys)
+        for k in self._keys:
+            for d in data:
+                self[d[k]] = d
 
 
 if __name__ == '__main__':

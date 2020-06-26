@@ -1,4 +1,4 @@
-- [ ] use slack secrets
+- [x] use slack secrets
    - https://api.slack.com/authentication/verifying-requests-from-slack
 - [ ] change to use https:
    - integrate with slack ca_cert check
@@ -14,3 +14,4 @@
 - [ ] add hints/resources for sprintly tests
 - [ ] any help with triage report?
 - [x] add documentation/help command
+- [ ] send messages to DMs

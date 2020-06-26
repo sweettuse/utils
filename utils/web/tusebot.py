@@ -1,95 +1,13 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial, lru_cache
-from typing import NamedTuple, Optional, Any, Callable
 
-from misty_py.utils import json_obj
 from more_itertools import first
-from sanic import Sanic
-from sanic.response import empty, text
+from sanic.response import text
 
-from utils.slack_api import UserType, ssl_dict
-from utils.slack_api.api import SlackAPI
+from utils.slack_api import ssl_dict
 from utils.slack_api.text_to_emoji import text_to_emoji
+from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, _cmds
 
-app = Sanic(__name__)
-
-sanic_form = {'token': ['6fjPtJCoLaAdfpgGC0VHvKLE'], 'team_id': ['T03UGBWK0'], 'team_domain': ['xaxis'],
-              'channel_id': ['G012L1HJQCX'], 'channel_name': ['privategroup'], 'user_id': ['U09HB810D'],
-              'user_name': ['adam.cushner'], 'command': ['/tuse'], 'text': ['test'],
-              'response_url': ['https://hooks.slack.com/commands/T03UGBWK0/1219939910880/NNwD1GRbfpXMxLRSkCbo5xOo'],
-              'trigger_id': ['1181361063527.3968404646.1edcd81f4f78cefdaafc1df868a9a656']}
-
-_cmds = {}
-_pool = ThreadPoolExecutor(32)
-_CMD = '/tuse'
-
-
-class SlackInfo(NamedTuple):
-    """store request information from slack"""
-    cmd: str
-    argstr: str
-    data: json_obj
-
-    def __getattr__(self, item):
-        return self.data[item]
-
-    @classmethod
-    def from_data(cls, data):
-        data = _flatten_form(data)
-        if 'text' in data:
-            cmd, *argstr = data.text.strip().split(maxsplit=1)
-        else:
-            cmd, argstr = '', ['']
-        return cls(cmd, first(argstr, ''), data)
-
-
-def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
-                 *, name: Optional[str] = None):
-    """register cmd to be accessible from slack command
-
-    if passed a name, use that as cmd name, otherwise just use name of function"""
-    if not func:
-        return partial(register_cmd, name=name)
-
-    if name is None:
-        name = func.__name__
-
-    name = name.lower()
-    _cmds[name] = func
-
-    return func
-
-
-def _flatten_form(form) -> json_obj:
-    """transform {k: [v]} -> {k: v}"""
-    return json_obj((k, first(v) if isinstance(v, list) and len(v) == 1 else v) for k, v in form.items())
-
-
-@app.route('/slack', methods=['POST'])
-async def _dispatch(request):
-    """main entry point for slack requests
-
-    will inspect form and dispatch to the appropriate registered cmd"""
-    si = SlackInfo.from_data(request.form)
-    print(si)
-    try:
-        cmd = _cmds[si.cmd]
-    except KeyError:
-        return text(f'invalid cmd {si.cmd!r}\n\n{_gen_help_str()}')
-
-    res = await cmd(si)
-    return empty() if res is None else res
-
-
-async def _send_to_channel(channel, *msgs):
-    """send msgs to channel in the background"""
-
-    async def _helper():
-        for msg in msgs:
-            await _slack_api.post_message(channel, text=msg)
-
-    asyncio.create_task(_helper())
+__author__ = 'acushner'
 
 
 @register_cmd
@@ -100,7 +18,7 @@ async def emojify(si: SlackInfo, *, reverse=False):
     emoji = first(emoji, '')
     if not (emoji.startswith(':') and emoji.endswith(':')):
         data = f'{data} {emoji}'.rstrip()
-        emoji = await _slack_api.random_emoji
+        emoji = await slack_api.random_emoji
 
     msgs = text_to_emoji(data, emoji, reverse=reverse)
     await _send_to_channel(si.channel_id, *msgs)
@@ -122,44 +40,46 @@ async def _ping(si: SlackInfo):
 
 @register_cmd
 async def spam(si: SlackInfo):
-    """text
+    """text [--delay=delay_in_secs]
     send each word in _text_ to channel, uppercase, one word per line"""
-    await _send_to_channel(si.channel_id, *map(str.upper, si.argstr.split()))
+    delay = int(si.kwargs.get('delay', 0))
+    await _send_to_channel(si.channel_id, *map(str.upper, si.argstr.split()), delay=delay)
+
+
+@register_cmd
+async def _days_since(si: SlackInfo):
+    """desc
+    register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
+    this will update the channel daily on how many days it's been since this issue"""
 
 
 @register_cmd(name='help')
-async def help_(_: SlackInfo):
+async def help_(_=None):
     """
     show this message"""
-    return text(f'unloose the *tuse*:\n\n{_gen_help_str()}')
+    return text(gen_help_str())
 
 
-# ======================================================================================================================
+async def _send_to_channel(channel, *msgs, delay=0):
+    """send msgs to channel in the background"""
 
+    async def _helper():
+        for msg in msgs:
+            await slack_api.post_message(channel, text=msg)
+            if delay > 0:
+                await asyncio.sleep(delay)
 
-_slack_api: SlackAPI = None
-
-
-async def _init_slack_api():
-    global _slack_api
-    _slack_api = (await SlackAPI.from_user_type(UserType.bot))
+    asyncio.create_task(_helper())
 
 
 def _run_server(*, enable_ssl=False):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     ssl = ssl_dict if enable_ssl else None
-    server = app.create_server(host="0.0.0.0", port=31415, return_asyncio_server=True, ssl=ssl)
-    loop.run_until_complete(_init_slack_api())
+    server = app.create_server(host='0.0.0.0', port=31415, return_asyncio_server=True, ssl=ssl)
+    loop.run_until_complete(init_slack_api())
     loop.create_task(server)
     loop.run_forever()
-
-
-@lru_cache(1)
-def _gen_help_str():
-    return '\n'.join(f'{_CMD} _*{cmd}*_ {fn.__doc__}'
-                     for cmd, fn in sorted(_cmds.items())
-                     if not cmd.startswith('_'))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 __author__ = 'acushner'
 
+from operator import attrgetter
 from random import choice
 from typing import NamedTuple
 
@@ -18,7 +19,9 @@ class Incident(NamedTuple):
         return (arrow.utcnow() - arrow.get(self.date)).days
 
     def __str__(self):
-        return f'-{self.n_days}- days since {self.desc}'
+        n = self.n_days
+        s = 's' if n != 1 else ''
+        return f'-{n}- day{s} since {self.desc}'
 
     def with_emoji(self, emoji):
         return f':{emoji}: {str(self)}'
@@ -33,8 +36,8 @@ _incidents = [
 
 async def update_days_since(channel='poc_crew'):
     sa = await SlackAPI.from_user_type(UserType.bot)
-    strs = [i.with_emoji(await sa.random_emoji) for i in _incidents]
-    topic = "it's been " + ' and '.join(strs)
+    strs = [i.with_emoji(await sa.random_emoji) for i in sorted(_incidents, key=attrgetter('date'), reverse=True)]
+    topic = "it's been " + ' '.join(strs)
     print(topic)
     await sa.client.conversations_setTopic(channel=sa.channel_id(channel), topic=topic)
 

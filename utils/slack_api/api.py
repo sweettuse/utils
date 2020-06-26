@@ -1,26 +1,15 @@
-from itertools import chain
 from pathlib import Path
 from random import choice
-from typing import Optional, Any, Dict, List, Set, Iterable, Union
+from typing import Optional, List, Set, Iterable, Union
 
 from slack import WebClient
 from slackblocks import Message
 from slackblocks.blocks import Block
 
-import utils.core as U
-from utils.core import aobject, async_memoize, make_iter
+from utils.core import aobject, async_memoize, make_iter, DataStore
 from utils.slack_api import parse_config, UserType, async_run
 
 __author__ = 'acushner'
-
-
-class DataStore(dict):
-    def __init__(self, data: List[Dict[str, Any]], key: str, *keys: str):
-        super().__init__()
-        self._keys = chain([key], keys)
-        for k in self._keys:
-            for d in data:
-                self[d[k]] = d
 
 
 class SlackAPI(aobject):
@@ -87,7 +76,7 @@ class SlackAPI(aobject):
         if (text is not None) + (blocks is not None) != 1:
             raise ValueError('set exactly one of `text` and `blocks`')
         if blocks:
-            msg = Message(channel=channel, blocks=U.make_iter(blocks))
+            msg = Message(channel=channel, blocks=make_iter(blocks))
             await self.client.chat_postMessage(**msg)
         else:
             await self.client.chat_postMessage(channel=channel, text=text)
@@ -98,12 +87,14 @@ class SlackAPI(aobject):
         return DataStore([user_data[uid] for uid in user_ids], 'name', 'id', 'real_name')
 
     async def post_file(self, channel: str, fname: str, file_type: str = 'txt'):
+        """post file from local file system"""
         with open(fname) as f:
             content = f.read()
         title = Path(fname).name
         await self.post_in_mem_file(channel, content, title, file_type)
 
     async def post_in_mem_file(self, channel, content: str, title='from python', file_type='txt'):
+        """post file whose contents are in memory"""
         await self.client.files_upload(content=content, channels=self.channel_id(channel), filetype=file_type,
                                        title=title)
 
