@@ -1,11 +1,12 @@
 import asyncio
+from concurrent.futures.thread import ThreadPoolExecutor
 
 from more_itertools import first
 from sanic.response import text
 
 from utils.slack_api import ssl_dict
 from utils.slack_api.text_to_emoji import text_to_emoji
-from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, _cmds
+from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel
 
 __author__ = 'acushner'
 
@@ -21,7 +22,7 @@ async def emojify(si: SlackInfo, *, reverse=False):
         emoji = await slack_api.random_emoji
 
     msgs = text_to_emoji(data, emoji, reverse=reverse)
-    await _send_to_channel(si.channel_id, *msgs)
+    await send_to_channel(si, *msgs)
 
 
 @register_cmd
@@ -35,22 +36,16 @@ async def emojify_i(si: SlackInfo):
 async def _ping(si: SlackInfo):
     """text
     stupid test function"""
-    await _send_to_channel(si.channel_id, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
+    await send_to_channel(si, f'sending {si.argstr!r} 1', f'sending {si.argstr!r} 2')
 
 
 @register_cmd
 async def spam(si: SlackInfo):
     """text [--delay=delay_in_secs]
-    send each word in _text_ to channel, uppercase, one word per line"""
+    send each word in _text_ to channel, uppercase, one word per line
+    optional delay: how many secs between sending each line"""
     delay = int(si.kwargs.get('delay', 0))
-    await _send_to_channel(si.channel_id, *map(str.upper, si.argstr.split()), delay=delay)
-
-
-@register_cmd
-async def _days_since(si: SlackInfo):
-    """desc
-    register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
-    this will update the channel daily on how many days it's been since this issue"""
+    await send_to_channel(si, *map(str.upper, si.argstr.split()), delay_in_secs=delay)
 
 
 @register_cmd(name='help')
@@ -60,16 +55,14 @@ async def help_(_=None):
     return text(gen_help_str())
 
 
-async def _send_to_channel(channel, *msgs, delay=0):
-    """send msgs to channel in the background"""
-
-    async def _helper():
-        for msg in msgs:
-            await slack_api.post_message(channel, text=msg)
-            if delay > 0:
-                await asyncio.sleep(delay)
-
-    asyncio.create_task(_helper())
+@register_cmd
+async def _days_since(si: SlackInfo):
+    """desc
+    register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
+    this will update the channel daily on how many days it's been since this issue, starting from today
+    """
+    if si.channel_id.startswith('D'):
+        return text("due to slack limitations, i can't do this for direct messages")
 
 
 def _run_server(*, enable_ssl=False):

@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from random import choice
 from typing import Optional, List, Set, Iterable, Union
@@ -12,11 +13,18 @@ from utils.slack_api import parse_config, UserType, async_run
 __author__ = 'acushner'
 
 
+class ChannelType(Enum):
+    public = 'public_channel'
+    private = 'private_channel'
+    group = 'mpim'
+    direct = 'im'
+
+
 class SlackAPI(aobject):
     # this weird formulation is due to the fact that pycharm thinks `__init__` can't be async...
     async def _async_init(self, token):
         self.client = WebClient(token, run_async=True)
-        self._privates = await self._init_private_channels()
+        self._channels = await self._init_channels()
 
     __init__ = _async_init
 
@@ -24,12 +32,19 @@ class SlackAPI(aobject):
     async def from_user_type(cls, ut: UserType) -> 'SlackAPI':
         return await cls(parse_config()[ut.value + 'oauth_access_token'])
 
-    async def _init_private_channels(self) -> DataStore:
-        res = await self.client.conversations_list(types='private_channel')
-        return DataStore(res['channels'], 'name', 'id')
+    async def _init_channels(self) -> DataStore:
+        res = await self.get_channels(list(ChannelType))
+        return DataStore(res, 'name', 'id')
+
+    async def get_channels(self, types: Union[ChannelType, List[ChannelType]]):
+        """get all channels of specified `types`"""
+        types = ','.join(ct.value for ct in make_iter(types))
+        return await self._paginate(self.client.conversations_list, _response_key='channels', types=types,
+                                    exclude_archived=True, limit=500)
 
     def channel_id(self, channel_name):
-        channel_data = self._privates.get(channel_name)
+        """convert channel name/id into channel id"""
+        channel_data = self._channels.get(channel_name)
         if channel_data:
             return channel_data['id']
         return channel_name
@@ -43,10 +58,12 @@ class SlackAPI(aobject):
 
     @async_memoize
     async def get_emoji(self):
+        """get a list of all available emoji"""
         return await self._paginate(self.client.emoji_list, _response_key='emoji')
 
     @property
     async def random_emoji(self):
+        """get a random emoji from all available emoji"""
         return choice(list(await self.get_emoji()))
 
     # async def get_user_groups(self):
@@ -57,7 +74,7 @@ class SlackAPI(aobject):
     #     ugs = await self.get_user_groups()
 
     @async_memoize
-    async def get_channel_members(self, channel) -> Set[str]:
+    async def get_channel_members(self, channel: str) -> Set[str]:
         """get user_ids for a particular conversation"""
         channel = self.channel_id(channel)
         res = await self._paginate(self.client.conversations_members, _response_key='members', channel=channel)

@@ -7,9 +7,11 @@ from functools import wraps, partial
 from io import BytesIO
 from itertools import islice, chain
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Any, NamedTuple, List, Dict
+from typing import Iterable, Any, NamedTuple, List, Dict, Optional, Union
 
 __author__ = 'acushner'
+
+from misty_py.utils import json_obj
 
 _sentinel = object()
 
@@ -181,14 +183,20 @@ def async_memoize(func=None, *, configuration=None):
     return memoize(configuration=configuration)(func)
 
 
-class DataStore(dict):
+class DataStore(json_obj):
     """mapping of one or more of a dict's keys to the dict itself"""
+
+    def __new__(cls, *_, **__):
+        return super().__new__(cls)
+
     def __init__(self, data: List[Dict[str, Any]], key: str, *keys: str):
         super().__init__()
         self._keys = chain([key], keys)
         for k in self._keys:
             for d in data:
-                self[d[k]] = d
+                cur_key = d.get(k)
+                if cur_key:
+                    self[cur_key] = d
 
 
 if __name__ == '__main__':

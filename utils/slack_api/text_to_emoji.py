@@ -84,7 +84,6 @@ def _is_space(v):
 
 async def _blocks_time():
     sa = await SlackAPI.from_user_type(UserType.user)
-    print(sa._privates.keys())
     font = load_font('Comic Sans MS.ttf', 13)
     blocks = text_to_emoji('abcdef', 'thumbsup', font, reverse=False)
     print(len(blocks))
