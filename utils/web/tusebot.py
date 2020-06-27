@@ -10,6 +10,8 @@ from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_a
 
 __author__ = 'acushner'
 
+from utils.web.incident import IncidentStore, IncidentInfo, init_incident_store
+
 
 @register_cmd
 async def emojify(si: SlackInfo, *, reverse=False):
@@ -55,14 +57,39 @@ async def help_(_=None):
     return text(gen_help_str())
 
 
+_incident_store = init_incident_store()
+
+
+def _format_incident_info(ii: IncidentInfo):
+    return f'*{ii.id}*: _{repr(ii.incident)}_'
+
+
 @register_cmd
-async def _days_since(si: SlackInfo):
-    """desc
-    register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
-    this will update the channel daily on how many days it's been since this issue, starting from today
+async def days_since(si: SlackInfo):
+    """
+    desc [--list] [--del=id]
+        register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
+        this will update the channel daily on how many days it's been since this issue, starting from today
+        optional: with _--list_: show all incidents you've created
+        optional: with _--del=id_: delete incident with _id_
     """
     if si.channel_id.startswith('D'):
         return text("due to slack limitations, i can't do this for direct messages")
+
+    if 'list' in si.flags:
+        res = _incident_store.incidents[si.user_id]
+        res = '\n'.join(map(_format_incident_info, res))
+        return text(res or 'no incidents found for you')
+
+    elif 'del' in si.kwargs:
+        try:
+            ii = _incident_store.rm(si.kwargs['del'])
+            return text(f'removed {_format_incident_info(ii)}')
+        except ValueError:
+            return text(f'unable to remove {si.kwargs["del"]!r}')
+
+    res = _incident_store.add(si.user_name, si.user_id, si.channel_id, si.argstr)
+    return text(_format_incident_info(res))
 
 
 def _run_server(*, enable_ssl=False):
@@ -75,5 +102,9 @@ def _run_server(*, enable_ssl=False):
     loop.run_forever()
 
 
-if __name__ == '__main__':
+def __main():
     _run_server(enable_ssl=False)
+
+
+if __name__ == '__main__':
+    __main()

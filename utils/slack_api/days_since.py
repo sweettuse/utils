@@ -14,6 +14,10 @@ class Incident(NamedTuple):
     date: str
     desc: str
 
+    @classmethod
+    def from_desc(cls, desc):
+        return cls(arrow.now().format('YYYY-MM-DD'), desc)
+
     @property
     def n_days(self):
         return (arrow.utcnow() - arrow.get(self.date)).days

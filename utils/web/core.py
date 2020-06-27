@@ -4,6 +4,7 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from functools import partial, lru_cache
 from hashlib import sha256
+from textwrap import dedent
 from typing import Optional, Any, Callable, Dict
 
 import requests
@@ -66,7 +67,9 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
 
 @lru_cache(1)
 def gen_help_str():
-    help_str = '\n'.join(f'{_CMD} _*{cmd}*_ {fn.__doc__}'
+    def _parse_doc(d):
+        return dedent('\n'.join(l for l in d.splitlines() if l.strip()))
+    help_str = '\n'.join(f'{_CMD} _*{cmd}*_ _{_parse_doc(fn.__doc__)}_'
                          for cmd, fn in sorted(_cmds.items())
                          if not cmd.startswith('_'))
     return f'unloose the *tuse*:\n\n{help_str}'

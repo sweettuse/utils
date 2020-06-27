@@ -129,7 +129,7 @@ class SliceableDeque(deque):
         self.rotate(offset)
 
 
-def make_iter(v, base_type=(str, bytes)):
+def make_iter(v, base_type=(str, bytes, dict)):
     if isinstance(v, base_type):
         return [v]
     if v is None:
@@ -189,14 +189,25 @@ class DataStore(json_obj):
     def __new__(cls, *_, **__):
         return super().__new__(cls)
 
-    def __init__(self, data: List[Dict[str, Any]], key: str, *keys: str):
+    def __init__(self):
         super().__init__()
-        self._keys = chain([key], keys)
-        for k in self._keys:
-            for d in data:
-                cur_key = d.get(k)
-                if cur_key:
-                    self[cur_key] = d
+
+    @classmethod
+    def from_data(cls, data: Union[Dict[str, Any], List[Dict[str, Any]]], key: str, *keys: str):
+        res = cls()
+        res.update(data, key, *keys)
+        return res
+
+    def update(self, data: List[Dict[str, Any]], *keys):
+        data = make_iter(data)
+        for d in data:
+            self.add(d, *keys)
+
+    def add(self, d: Dict[str, Any], *keys):
+        for k in keys:
+            cur_key = d.get(k)
+            if cur_key:
+                self[cur_key] = d
 
 
 if __name__ == '__main__':

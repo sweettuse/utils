@@ -34,7 +34,7 @@ class SlackAPI(aobject):
 
     async def _init_channels(self) -> DataStore:
         res = await self.get_channels(list(ChannelType))
-        return DataStore(res, 'name', 'id')
+        return DataStore.from_data(res, 'name', 'id')
 
     async def get_channels(self, types: Union[ChannelType, List[ChannelType]]):
         """get all channels of specified `types`"""
@@ -54,7 +54,7 @@ class SlackAPI(aobject):
         """get all non-deleted users. still include deactivated"""
         users = await self._paginate(self.client.users_list, _response_key='members')
         users = [u for u in users if not u['deleted']]
-        return DataStore(users, 'id', 'name', 'real_name')
+        return DataStore.from_data(users, 'id', 'name', 'real_name')
 
     @async_memoize
     async def get_emoji(self):
@@ -101,7 +101,7 @@ class SlackAPI(aobject):
     async def _user_ids_to_data(self, user_ids: Iterable[str], user_data: Optional[DataStore] = None):
         """given an iterable of user ids, create a DataStore with the user data"""
         user_data = user_data or await self.get_users()
-        return DataStore([user_data[uid] for uid in user_ids], 'name', 'id', 'real_name')
+        return DataStore.from_data([user_data[uid] for uid in user_ids], 'name', 'id', 'real_name')
 
     async def post_file(self, channel: str, fname: str, file_type: str = 'txt'):
         """post file from local file system"""
