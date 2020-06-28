@@ -21,7 +21,7 @@ async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n
     strs = [i.with_emoji(await sa.random_emoji) for i in incidents[:n]]
     topic = "it's been " + ' '.join(strs)
     print(topic)
-    # await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
+    await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
 
 
 async def update_days_since():
