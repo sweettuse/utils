@@ -4,13 +4,15 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from more_itertools import first
 from sanic.response import text
 
-from utils.slack_api import ssl_dict
+from utils.slack_api import ssl_dict, parse_config
 from utils.slack_api.text_to_emoji import text_to_emoji
 from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel
 
 __author__ = 'acushner'
 
-from utils.web.incident import IncidentStore, IncidentInfo, init_incident_store
+from utils.web.incident import IncidentInfo, init_incident_store
+
+_admins = parse_config().admin_id_name_map
 
 
 @register_cmd
@@ -65,7 +67,7 @@ def _format_incident_info(ii: IncidentInfo):
 
 
 @register_cmd
-async def days_since(si: SlackInfo):
+async def incident(si: SlackInfo):
     """
     desc [--list] [--del=id]
         register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
@@ -77,16 +79,21 @@ async def days_since(si: SlackInfo):
         return text("due to slack limitations, i can't do this for direct messages")
 
     if 'list' in si.flags:
-        res = _incident_store.incidents[si.user_id]
-        res = '\n'.join(map(_format_incident_info, res))
+        if si.user_id in _admins and 'basic' not in si.flags:
+            incidents = map(str, _incident_store.incidents.values())
+        else:
+            incidents = map(_format_incident_info, _incident_store.by_user_id(si.user_id))
+        res = '*your incidents:*\n\n' + '\n'.join(incidents)
         return text(res or 'no incidents found for you')
 
     elif 'del' in si.kwargs:
         try:
-            ii = _incident_store.rm(si.kwargs['del'])
+            # TODO: make sure a user can remove only their own incidents
+            ii = _incident_store.rm(si.kwargs['del'], si.user_id)
             return text(f'removed {_format_incident_info(ii)}')
-        except ValueError:
-            return text(f'unable to remove {si.kwargs["del"]!r}')
+        except (ValueError, PermissionError):
+            return text(f"error: either id {si.kwargs['del']!r} doesn't exist in the system "
+                        f"or you don't have permission to remove that")
 
     res = _incident_store.add(si.user_name, si.user_id, si.channel_id, si.argstr)
     return text(_format_incident_info(res))

@@ -1,3 +1,4 @@
+from collections import ChainMap
 from enum import Enum
 from pathlib import Path
 from random import choice
@@ -59,7 +60,8 @@ class SlackAPI(aobject):
     @async_memoize
     async def get_emoji(self):
         """get a list of all available emoji"""
-        return await self._paginate(self.client.emoji_list, _response_key='emoji')
+        emoji_dicts = await self._paginate(self.client.emoji_list, _response_key='emoji')
+        return ChainMap(*emoji_dicts)
 
     @property
     async def random_emoji(self):

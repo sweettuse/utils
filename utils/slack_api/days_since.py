@@ -1,49 +1,35 @@
+import asyncio
+import random
+from typing import List
+
+from utils.slack_api import UserType
+from utils.slack_api.api import SlackAPI
+from utils.web.incident import Incident, init_incident_store
+
 __author__ = 'acushner'
 
-from operator import attrgetter
-from random import choice
-from typing import NamedTuple
-
-import arrow
-
-from utils.slack_api.api import SlackAPI
-from utils.slack_api import UserType, async_run
+# _incidents = [
+#     Incident('2020-05-18', 'an excel drag-down related incident'),
+#     Incident('2020-06-12', 'misinformation'),
+#     Incident('2020-06-22', 'a considerable brain fart'),
+# ]
 
 
-class Incident(NamedTuple):
-    date: str
-    desc: str
-
-    @classmethod
-    def from_desc(cls, desc):
-        return cls(arrow.now().format('YYYY-MM-DD'), desc)
-
-    @property
-    def n_days(self):
-        return (arrow.utcnow() - arrow.get(self.date)).days
-
-    def __str__(self):
-        n = self.n_days
-        s = 's' if n != 1 else ''
-        return f'-{n}- day{s} since {self.desc}'
-
-    def with_emoji(self, emoji):
-        return f':{emoji}: {str(self)}'
-
-
-_incidents = [
-    Incident('2020-05-18', 'an excel drag-down related incident'),
-    Incident('2020-06-12', 'misinformation'),
-    Incident('2020-06-22', 'a considerable brain fart'),
-]
-
-
-async def update_days_since(channel='poc_crew'):
-    sa = await SlackAPI.from_user_type(UserType.bot)
-    strs = [i.with_emoji(await sa.random_emoji) for i in sorted(_incidents, key=attrgetter('date'), reverse=True)]
+async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n=3):
+    # strs = [i.with_emoji(await sa.random_emoji) for i in sorted(incidents, key=attrgetter('date'), reverse=True)[:n]]
+    random.shuffle(incidents)
+    strs = [i.with_emoji(await sa.random_emoji) for i in incidents[:n]]
     topic = "it's been " + ' '.join(strs)
     print(topic)
-    await sa.client.conversations_setTopic(channel=sa.channel_id(channel), topic=topic)
+    await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
+
+
+async def update_days_since():
+    sa = await SlackAPI.from_user_type(UserType.bot)
+    incidents = init_incident_store().group_by_channel()
+    tasks = (asyncio.create_task(_update_channel(sa, channel, [ii.incident for ii in iis]))
+             for channel, iis in incidents.items())
+    await asyncio.gather(*tasks)
 
 
 async def run():
@@ -52,9 +38,15 @@ async def run():
                                      link_names=True)
 
 
+def fix_dates():
+    i = init_incident_store()
+    breakpoint()
+
+
 def __main():
     # print(list(_get_days()))
-    async_run(update_days_since())
+    # async_run(update_days_since())
+    fix_dates()
 
 
 if __name__ == '__main__':

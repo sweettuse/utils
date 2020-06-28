@@ -1,4 +1,5 @@
 import asyncio
+import shelve
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
@@ -6,7 +7,7 @@ from pathlib import Path
 import uvloop
 from misty_py.utils import json_obj
 
-__all__ = 'parse_config', 'UserType', 'ConvType', 'async_run', 'ssl_dict', 'incident_info_path'
+__all__ = 'parse_config', 'UserType', 'ConvType', 'async_run', 'ssl_dict', 'incident_store_path'
 
 uvloop.install()
 
@@ -14,7 +15,7 @@ SLACK_CONF_DIR = Path('~/.slack').expanduser()
 SLACK_CONF = SLACK_CONF_DIR / 'config'
 _loop: uvloop.Loop = asyncio.get_event_loop()
 ssl_dict = dict(cert=str(SLACK_CONF_DIR / 'cert.pem'), key=str(SLACK_CONF_DIR / 'key.pem'))
-incident_info_path = str(SLACK_CONF_DIR / 'incident_info')
+incident_store_path = str(SLACK_CONF_DIR / 'incident_store')
 
 
 @lru_cache()

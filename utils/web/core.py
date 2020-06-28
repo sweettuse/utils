@@ -69,9 +69,11 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
 def gen_help_str():
     def _parse_doc(d):
         return dedent('\n'.join(l for l in d.splitlines() if l.strip()))
-    help_str = '\n'.join(f'{_CMD} _*{cmd}*_ _{_parse_doc(fn.__doc__)}_'
+
+    help_str = '\n'.join(f'{_CMD} _*{cmd}*_ {_parse_doc(fn.__doc__)}'
                          for cmd, fn in sorted(_cmds.items())
                          if not cmd.startswith('_'))
+
     return f'unloose the *tuse*:\n\n{help_str}'
 
 
