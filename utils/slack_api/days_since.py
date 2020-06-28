@@ -26,11 +26,11 @@ async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n
 
 async def update_days_since():
     sa = await SlackAPI.from_user_type(UserType.bot)
-    await _update_channel(sa, 'poc_crew', _incidents)
-    # incidents = init_incident_store().group_by_channel()
-    # tasks = (asyncio.create_task(_update_channel(sa, channel, [ii.incident for ii in iis]))
-    #          for channel, iis in incidents.items())
-    # await asyncio.gather(*tasks)
+    # await _update_channel(sa, 'poc_crew', _incidents)
+    incidents = init_incident_store().group_by_channel()
+    tasks = (asyncio.create_task(_update_channel(sa, channel, [ii.incident for ii in iis]))
+             for channel, iis in incidents.items())
+    await asyncio.gather(*tasks)
 
 
 async def run():

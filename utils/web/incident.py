@@ -1,5 +1,6 @@
 import atexit
 import os
+import pickle
 import shelve
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -81,16 +82,15 @@ class IncidentStore:
     def __init__(self):
         self.incidents: Dict[str, IncidentInfo] = {}
         self._id_gen = count()
-        self._cp_slack = False
 
     @classmethod
-    def from_path(cls, path=incident_store_path) -> 'IncidentStore':
-        with shelve.open(path) as shelf:
-            return shelf.get(cls._key, cls())
+    def from_path(cls) -> 'IncidentStore':
+        with open(incident_store_path, 'rb') as f:
+            return pickle.load(f)
 
-    def persist(self, path=incident_store_path):
-        with shelve.open(path) as shelf:
-            shelf[self._key] = self
+    def persist(self):
+        with open(incident_store_path, 'wb') as f:
+            pickle.dump(self, f)
 
     @property
     def next_id(self) -> str:

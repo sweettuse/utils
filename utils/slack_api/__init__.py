@@ -15,7 +15,7 @@ SLACK_CONF_DIR = Path('~/.slack').expanduser()
 SLACK_CONF = SLACK_CONF_DIR / 'config'
 _loop: uvloop.Loop = asyncio.get_event_loop()
 ssl_dict = dict(cert=str(SLACK_CONF_DIR / 'cert.pem'), key=str(SLACK_CONF_DIR / 'key.pem'))
-incident_store_path = str(SLACK_CONF_DIR / 'incident_store')
+incident_store_path = str(SLACK_CONF_DIR / 'incident_store.pkl')
 
 
 @lru_cache()
