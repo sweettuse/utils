@@ -25,6 +25,7 @@ async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n
         while n > 0:
             await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
             n -= 1
+            return
     except Exception as e:
         print(f'ERROR: {e!r}')
 
