@@ -15,13 +15,17 @@ _incidents = [
 ]
 
 
-async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n=3):
+async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n=4):
     # strs = [i.with_emoji(await sa.random_emoji) for i in sorted(incidents, key=attrgetter('date'), reverse=True)[:n]]
     random.shuffle(incidents)
     strs = [i.with_emoji(await sa.random_emoji) for i in incidents[:n]]
     topic = "it's been " + ' '.join(strs)
     print(topic)
-    await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
+    try:
+        await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
+    except Exception as e:
+        print(f'ERROR: {e!r}')
+
 
 
 async def update_days_since():
