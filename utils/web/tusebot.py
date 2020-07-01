@@ -1,21 +1,61 @@
 import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
+from io import BytesIO
+from pathlib import Path
 
+from lifxlan3 import timer
 from more_itertools import first
 from sanic.response import text
 
-from utils.slack_api import ssl_dict, parse_config
+from utils.slack_api import parse_config
+from utils.slack_api.big_emoji import resize_image, resize_gif
 from utils.slack_api.text_to_emoji import text_to_emoji
-from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel
+from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel, \
+    request_in_loop, no_dm
 
 __author__ = 'acushner'
 
 from utils.web.incident import IncidentInfo, init_incident_store
 
 _admins = parse_config().admin_id_name_map
+DEFAULT_MULT = 6.
+MAX_MULT = 15.
 
 
 @register_cmd
+@no_dm
+async def embiggen(si: SlackInfo):
+    """emoji [size_multiple]
+    [size_multiple]: multiple to scale up/down emoji size by"""
+    emoji, *rest = si.argstr.split()
+    mult = min(MAX_MULT, float(first(rest, DEFAULT_MULT)))
+    if mult <= 0:
+        return text(f'invalid mult: {mult}')
+
+    async def _embiggen_helper():
+        all_emoji = await slack_api.get_emoji()
+        emoji_url = all_emoji[emoji.strip(':')]
+        resp = await request_in_loop('GET', emoji_url)
+        data = BytesIO(resp.content)
+
+        if emoji_url.endswith('gif'):
+            filetype = 'gif'
+            res = resize_gif(data, mult)
+        else:
+            filetype = 'jpeg'
+            res = resize_image(data, mult)
+
+        filename = f'embiggened {emoji.strip(":")!r}'
+        await slack_api.client.files_upload(file=res.read(), channels=si.channel_id, filetype=filetype,
+                                            filename=filename)
+
+    # TODO: run in process
+    asyncio.create_task(_embiggen_helper())
+    return text(f'emoji: {emoji} mult: {mult}')
+
+
+@register_cmd
+@no_dm
 async def emojify(si: SlackInfo, *, reverse=False):
     """text [emoji]
     transform text into emoji representation in slack"""
@@ -30,6 +70,7 @@ async def emojify(si: SlackInfo, *, reverse=False):
 
 
 @register_cmd
+@no_dm
 async def emojify_i(si: SlackInfo):
     """text [emoji]
     inverted form of _*emojify*_"""
@@ -62,11 +103,8 @@ async def help_(_=None):
 _incident_store = init_incident_store()
 
 
-def _format_incident_info(ii: IncidentInfo):
-    return f'*{ii.id}*: _{repr(ii.incident)}_'
-
-
 @register_cmd
+@no_dm
 async def incident(si: SlackInfo):
     """
     desc [--list] [--del=id]
@@ -75,11 +113,10 @@ async def incident(si: SlackInfo):
         optional: with _--list_: show all incidents you've created
         optional: with _--del=id_: delete incident with _id_
     """
-    if si.channel_id.startswith('D'):
-        return text("due to slack limitations, i can't do this for direct messages")
+    is_admin = si.user_id in _admins and 'basic' not in si.flags
 
     if 'list' in si.flags:
-        if si.user_id in _admins and 'basic' not in si.flags:
+        if is_admin:
             incidents = map(str, _incident_store.incidents.values())
         else:
             incidents = map(_format_incident_info, _incident_store.by_user_id(si.user_id))
@@ -88,29 +125,34 @@ async def incident(si: SlackInfo):
 
     elif 'del' in si.kwargs:
         try:
-            # TODO: make sure a user can remove only their own incidents
-            ii = _incident_store.rm(si.kwargs['del'], si.user_id)
+            ii = _incident_store.rm(si.kwargs['del'], si.user_id, is_admin=is_admin)
             return text(f'removed {_format_incident_info(ii)}')
         except (ValueError, PermissionError):
             return text(f"error: either id {si.kwargs['del']!r} doesn't exist in the system "
                         f"or you don't have permission to remove that")
 
     res = _incident_store.add(si.user_name, si.user_id, si.channel_id, si.argstr)
-    return text(_format_incident_info(res))
+    if res:
+        return text(_format_incident_info(res))
+    return text('must pass in a non-empty description')
 
 
-def _run_server(*, enable_ssl=False):
+def _format_incident_info(ii: IncidentInfo):
+    return f'*{ii.id}*: _{repr(ii.incident)}_'
+
+
+def _run_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    ssl = ssl_dict if enable_ssl else None
-    server = app.create_server(host='0.0.0.0', port=31415, return_asyncio_server=True, ssl=ssl)
+    server = app.create_server(host='0.0.0.0', port=31415, return_asyncio_server=True)
+    # server = app.create_server(host='127.0.0.1', port=31415, return_asyncio_server=True)
     loop.run_until_complete(init_slack_api())
     loop.create_task(server)
     loop.run_forever()
 
 
 def __main():
-    _run_server(enable_ssl=False)
+    _run_server()
 
 
 if __name__ == '__main__':

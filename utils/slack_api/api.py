@@ -4,6 +4,7 @@ from pathlib import Path
 from random import choice
 from typing import Optional, List, Set, Iterable, Union
 
+from misty_py.utils import json_obj
 from slack import WebClient
 from slackblocks import Message
 from slackblocks.blocks import Block
@@ -112,10 +113,11 @@ class SlackAPI(aobject):
         title = Path(fname).name
         await self.post_in_mem_file(channel, content, title, file_type)
 
-    async def post_in_mem_file(self, channel, content: str, title='from python', file_type='txt'):
+    async def post_in_mem_file(self, channel, content: str, title='from python', filetype='txt', filename=None):
         """post file whose contents are in memory"""
-        await self.client.files_upload(content=content, channels=self.channel_id(channel), filetype=file_type,
-                                       title=title)
+        req = json_obj.from_not_none(content=content, channels=self.channel_id(channel), filetype=filetype,
+                                     title=title, filename=filename)
+        await self.client.files_upload(**req)
 
     @staticmethod
     async def _paginate(client_func, *args, _response_key: Optional[str] = None, **kwargs):

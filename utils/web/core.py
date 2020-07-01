@@ -2,7 +2,7 @@ import asyncio
 import hmac
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
-from functools import partial, lru_cache
+from functools import partial, lru_cache, wraps
 from hashlib import sha256
 from textwrap import dedent
 from typing import Optional, Any, Callable, Dict
@@ -34,7 +34,7 @@ async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0):
     if si.channel_id.startswith('D'):
         # dealing with direct message: can only use response_url and send up to 5 messages total
         msg_args = (dict(json=dict(text=msg)) for msg in msgs[:5])
-        request_fn = asyncpartial(_request, 'POST', si.response_url)
+        request_fn = asyncpartial(request_in_loop, 'POST', si.response_url)
     else:
         msg_args = (dict(text=msg) for msg in msgs)
         request_fn = asyncpartial(slack_api.post_message, si.channel_id)
@@ -50,7 +50,7 @@ async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0):
 
 def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
                  *, name: str = ''):
-    """register cmd to be accessible from slack command
+    """decorator to register cmd to be accessible from slack command
 
     if passed a name, use that as cmd name, otherwise just use name of function"""
     if not func:
@@ -65,6 +65,17 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
     return func
 
 
+def no_dm(func):
+    """decorator that disallows cmds on direct messages"""
+    @wraps(func)
+    async def wrapper(si: SlackInfo):
+        if si.channel_id.startswith('D'):
+            return text(f"due to slack limitations, i can't run _{si.cmd!r}_ for direct messages")
+        return await func(si)
+
+    return wrapper
+
+
 @lru_cache(1)
 def gen_help_str():
     def _parse_doc(d):
@@ -75,6 +86,11 @@ def gen_help_str():
                          if not cmd.startswith('_'))
 
     return f'unloose the *tuse*:\n\n{help_str}'
+
+
+# @app.route('/test', methods=['POST'])
+# async def inspect(request):
+#     breakpoint()
 
 
 @app.route('/slack', methods=['POST'])
@@ -110,8 +126,8 @@ def _validate_message(request):
 _pool = ThreadPoolExecutor(32)
 
 
-async def _request(method, url, json=None,
-                   *, _headers: Optional[Dict[str, str]] = None):
+async def request_in_loop(method, url, json=None,
+                          *, _headers: Optional[Dict[str, str]] = None):
     """make requests work in asyncio"""
     req_kwargs = json_obj.from_not_none(json=json, headers=_headers)
     f = partial(requests.request, method, url, **req_kwargs)

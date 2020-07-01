@@ -7,7 +7,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import suppress
 from functools import lru_cache, wraps
 from itertools import count
-from typing import Dict, List, NamedTuple, Set
+from typing import Dict, List, NamedTuple, Set, Optional
 
 import arrow
 from cluegen import FrozenDatum
@@ -23,7 +23,7 @@ class Incident(NamedTuple):
 
     @classmethod
     def from_desc(cls, desc):
-        return cls(arrow.now().format('YYYY-MM-DD'), desc)
+        return cls(arrow.now().format('YYYY-MM-DD'), desc.strip())
 
     @property
     def n_days(self):
@@ -97,18 +97,21 @@ class IncidentStore:
         return f'inc_id_{next(self._id_gen):03}'
 
     @persist_deco
-    def add(self, user_name, user_id, channel_id, desc: str) -> IncidentInfo:
+    def add(self, user_name, user_id, channel_id, desc: str) -> Optional[IncidentInfo]:
+        if not desc.strip():
+            return
+
         ii = IncidentInfo(self.next_id, user_name, user_id, channel_id, Incident.from_desc(desc))
         self.incidents[ii.id] = ii
         return ii
 
     @persist_deco
-    def rm(self, ii_id, user_id) -> IncidentInfo:
+    def rm(self, ii_id, user_id, *, is_admin) -> IncidentInfo:
         ii = self.incidents.get(ii_id)
         if ii is None:
             raise ValueError(f'unable to find id {ii_id}')
 
-        if ii.user_id != user_id:
+        if not is_admin and ii.user_id != user_id:
             raise PermissionError("unable to delete an incident that isn't yours!")
 
         del self.incidents[ii_id]

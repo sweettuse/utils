@@ -1,8 +1,5 @@
 - [x] use slack secrets
    - https://api.slack.com/authentication/verifying-requests-from-slack
-- [ ] change to use https:
-   - integrate with slack ca_cert check
-   - https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
 - [x] run multithreaded (switched to sanic - just multiple processes)
 - [x] split message smartly
     - [x] split according to `response_url`
@@ -12,6 +9,10 @@
 - [ ] add emoji from web
    - resize automatically
 - [ ] add hints/resources for sprintly tests
-- [ ] any help with triage report?
+- [x] any help with triage report?
 - [x] add documentation/help command
-- [ ] send messages to DMs
+- [x] send messages to DMs
+- [ ] change to use https:
+   - integrate with slack ca_cert check
+   - https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+   - note: can't do with self-signed cert
