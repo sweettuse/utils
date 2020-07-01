@@ -1,6 +1,9 @@
 import asyncio
 import random
+from contextlib import suppress
 from typing import List
+
+from slack.errors import SlackApiError
 
 from utils.slack_api import UserType, async_run
 from utils.slack_api.api import SlackAPI
@@ -16,19 +19,15 @@ _incidents = [
 
 
 async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n=5):
-    # strs = [i.with_emoji(await sa.random_emoji) for i in sorted(incidents, key=attrgetter('date'), reverse=True)[:n]]
     random.shuffle(incidents)
-    try:
-        while n > 0:
-            n -= 1
-            strs = [i.with_emoji(await sa.random_emoji) for i in incidents[:n]]
-            topic = "it's been " + ' '.join(strs)
-            print(channel_id, topic)
+    while n > 0:
+        strs = [i.with_emoji(await sa.random_emoji) for i in incidents[:n]]
+        n -= 1
+        topic = "it's been " + ' '.join(strs)
+        print(channel_id, topic)
+        with suppress(SlackApiError):
             await sa.client.conversations_setTopic(channel=sa.channel_id(channel_id), topic=topic)
             return
-
-    except Exception as e:
-        print(f'ERROR: {e!r}')
 
 
 async def update_days_since():
