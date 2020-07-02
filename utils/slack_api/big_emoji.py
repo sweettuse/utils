@@ -107,16 +107,19 @@ def extract_and_resize_frames(path, resize_mult=None):
     return all_frames
 
 
-def resize_image(data: BytesIO, mult: int) -> BytesIO:
+def resize_image(data: BytesIO, mult: float) -> BytesIO:
     im = Image.open(data)
     res = BytesIO()
-    im = im.resize(_calc_resize(im, mult)).convert('RGB')
-    im.save(res, format='jpeg', optimize=True)
+    if mult < 1:
+        im.thumbnail(_calc_resize(im, mult))
+    else:
+        im = im.resize(_calc_resize(im, mult))
+    im.convert('RGB').save(res, format='jpeg', optimize=True)
     res.seek(0)
     return res
 
 
-def resize_gif(data: BytesIO, mult: int) -> BytesIO:
+def resize_gif(data: BytesIO, mult: float) -> BytesIO:
     res = BytesIO()
     _resize_gif(data, res, mult)
     res.seek(0)

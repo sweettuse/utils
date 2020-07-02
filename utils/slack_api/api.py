@@ -5,6 +5,7 @@ from random import choice
 from typing import Optional, List, Set, Iterable, Union
 
 from misty_py.utils import json_obj
+from more_itertools import first
 from slack import WebClient
 from slackblocks import Message
 from slackblocks.blocks import Block
@@ -62,7 +63,7 @@ class SlackAPI(aobject):
     async def get_emoji(self):
         """get a list of all available emoji"""
         emoji_dicts = await self._paginate(self.client.emoji_list, _response_key='emoji')
-        return ChainMap(*emoji_dicts)
+        return first(emoji_dicts) if len(emoji_dicts) == 1 else ChainMap(*emoji_dicts)
 
     @property
     async def random_emoji(self):
@@ -139,7 +140,8 @@ class SlackAPI(aobject):
 
 
 async def run():
-    sa = await SlackAPI.from_user_type(UserType.bot)
+    sa = await SlackAPI.from_user_type(UserType.user)
+    await sa.get_emoji()
 
 
 def __main():

@@ -28,9 +28,10 @@ _cmds = {}
 _CMD = '/tuse'
 
 
-async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0):
+async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0.):
     """send msgs to channel in the background"""
 
+    delay_in_secs = max(0.0, float(si.kwargs.get('delay', delay_in_secs)))
     if si.channel_id.startswith('D'):
         # dealing with direct message: can only use response_url and send up to 5 messages total
         msg_args = (dict(json=dict(text=msg)) for msg in msgs[:5])
@@ -67,11 +68,12 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
 
 def no_dm(func):
     """decorator that disallows cmds on direct messages"""
+
     @wraps(func)
-    async def wrapper(si: SlackInfo):
+    async def wrapper(si: SlackInfo, **kwargs):
         if si.channel_id.startswith('D'):
             return text(f"due to slack limitations, i can't run _{si.cmd!r}_ for direct messages")
-        return await func(si)
+        return await func(si, **kwargs)
 
     return wrapper
 
@@ -123,9 +125,6 @@ def _validate_message(request):
     return sig == 'v0=' + hmac.new(_signing_secret, f'v0:{ts}:{body}'.encode(), sha256).hexdigest()
 
 
-_pool = ThreadPoolExecutor(32)
-
-
 async def request_in_loop(method, url, json=None,
                           *, _headers: Optional[Dict[str, str]] = None):
     """make requests work in asyncio"""
@@ -145,6 +144,7 @@ slack_api: SlackAPI = _SlackAPIProxy()
 
 _slack_api: SlackAPI = None
 _signing_secret = parse_config().signing_secret.encode()
+_pool = ThreadPoolExecutor(32)
 
 
 async def init_slack_api():

@@ -45,7 +45,7 @@ async def embiggen(si: SlackInfo):
             filetype = 'jpeg'
             res = resize_image(data, mult)
 
-        filename = f'embiggened {emoji.strip(":")!r}'
+        filename = f'embiggened {emoji.strip(":")!r} for {si.user_name}'
         await slack_api.client.files_upload(file=res.read(), channels=si.channel_id, filetype=filetype,
                                             filename=filename)
 
@@ -89,7 +89,6 @@ async def spam(si: SlackInfo):
     """text [--delay=delay_in_secs]
     send each word in _text_ to channel, uppercase, one word per line
     optional delay: how many secs between sending each line"""
-    delay = int(si.kwargs.get('delay', 0))
     await send_to_channel(si, *map(str.upper, si.argstr.split()), delay_in_secs=delay)
 
 
@@ -120,8 +119,8 @@ async def incident(si: SlackInfo):
             incidents = map(str, _incident_store.incidents.values())
         else:
             incidents = map(_format_incident_info, _incident_store.by_user_id(si.user_id))
-        res = '*your incidents:*\n\n' + '\n'.join(incidents)
-        return text(res or 'no incidents found for you')
+        res = '*your incidents:*\n\n' + ('\n'.join(incidents) or 'no incidents found')
+        return text(res)
 
     elif 'del' in si.kwargs:
         try:
