@@ -11,12 +11,6 @@ from utils.web.incident import Incident, init_incident_store
 
 __author__ = 'acushner'
 
-_incidents = [
-    Incident('2020-05-18', 'an excel drag-down related incident'),
-    Incident('2020-06-12', 'misinformation'),
-    Incident('2020-06-22', 'a considerable brain fart'),
-]
-
 
 async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n=5):
     random.shuffle(incidents)
@@ -32,7 +26,6 @@ async def _update_channel(sa: SlackAPI, channel_id, incidents: List[Incident], n
 
 async def update_days_since():
     sa = await SlackAPI.from_user_type(UserType.bot)
-    # await _update_channel(sa, 'poc_crew', _incidents)
     incidents = init_incident_store().group_by_channel()
     tasks = (asyncio.create_task(_update_channel(sa, channel, [ii.incident for ii in iis]))
              for channel, iis in incidents.items())

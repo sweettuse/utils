@@ -8,7 +8,7 @@ from utils.keyboard.state import State
 
 __author__ = 'acushner'
 
-WrappedAsync = Callable[[None], Coroutine[Any, Any, Any]]
+WrappedAsync = Callable[[], Coroutine[Any, Any, Any]]
 
 
 class ChordGroup(Enum):
@@ -54,7 +54,7 @@ class Chords(dict):
     async def parse_one(self, keys, prev: OnOff) -> Optional[OnOff]:
         current = self.get(keys)
         if current is None:
-            return None
+            return
 
         if current is Commands.stop:
             # stop what is currently running

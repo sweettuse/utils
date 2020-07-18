@@ -32,9 +32,15 @@ async def embiggen(si: SlackInfo):
     if mult <= 0:
         return text(f'invalid mult: {mult}')
 
-    async def _embiggen_helper():
-        all_emoji = await slack_api.get_emoji()
+    all_emoji = await slack_api.get_emoji()
+    try:
         emoji_url = all_emoji[emoji.strip(':')]
+    except KeyError:
+        return text(f"unable to find emoji {emoji!r} - this usually occurs because "
+                    f"you're trying to use a built-in emoji, and this only works on custom emoji due "
+                    f"to slack not including built-in emoji in its `emoji_list` call.")
+
+    async def _embiggen_helper():
         resp = await request_in_loop('GET', emoji_url)
         data = BytesIO(resp.content)
 
@@ -55,7 +61,6 @@ async def embiggen(si: SlackInfo):
 
 
 @register_cmd
-@no_dm
 async def emojify(si: SlackInfo, *, reverse=False):
     """text [emoji]
     transform text into emoji representation in slack"""
@@ -70,7 +75,6 @@ async def emojify(si: SlackInfo, *, reverse=False):
 
 
 @register_cmd
-@no_dm
 async def emojify_i(si: SlackInfo):
     """text [emoji]
     inverted form of _*emojify*_"""
@@ -89,7 +93,7 @@ async def spam(si: SlackInfo):
     """text [--delay=delay_in_secs]
     send each word in _text_ to channel, uppercase, one word per line
     optional delay: how many secs between sending each line"""
-    await send_to_channel(si, *map(str.upper, si.argstr.split()), delay_in_secs=delay)
+    await send_to_channel(si, *map(str.upper, si.argstr.split()))
 
 
 @register_cmd(name='help')

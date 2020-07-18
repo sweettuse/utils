@@ -417,7 +417,6 @@ def _create_wrapped_goals(shape: RC, goal: RC, impassable: Set[RC]) -> WrappedGo
     return WrappedGoals(bounds, goals, impassables)
 
 
-# TODO: write custom a_star that deals with moving snek
 def a_star(maze: List[List[Any]], start: RC, end: RC, impassable: Set[RC] = frozenset(), allow_wrap=False):
     """return a* path for maze"""
     start_n = ANode(None, start)

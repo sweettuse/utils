@@ -18,11 +18,11 @@ from utils.web.slack_info import SlackInfo
 
 app = Sanic(__name__)
 
-_sanic_form = {'token': ['6fjPtJCoLaAdfpgGC0VHvKLE'], 'team_id': ['T03UGBWK0'], 'team_domain': ['xaxis'],
-               'channel_id': ['G012L1HJQCX'], 'channel_name': ['privategroup'], 'user_id': ['U09HB810D'],
+_sanic_form = {'token': ['6fj*********************'], 'team_id': ['T03******'], 'team_domain': ['abcde'],
+               'channel_id': ['G*********'], 'channel_name': ['privategroup'], 'user_id': ['U0*******'],
                'user_name': ['adam.cushner'], 'command': ['/tuse'], 'text': ['test'],
-               'response_url': ['https://hooks.slack.com/commands/T03UGBWK0/1219939910880/NNwD1GRbfpXMxLRSkCbo5xOo'],
-               'trigger_id': ['1181361063527.3968404646.1edcd81f4f78cefdaafc1df868a9a656']}
+               'response_url': ['https://hooks.slack.com/commands/T0*******/1219939910880/NNwD********************'],
+               'trigger_id': ['11813********.3968******.1edcd81f4f78c*******************']}
 
 _cmds = {}
 _CMD = '/tuse'
@@ -34,7 +34,7 @@ async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0.):
     delay_in_secs = max(0.0, float(si.kwargs.get('delay', delay_in_secs)))
     if si.channel_id.startswith('D'):
         # dealing with direct message: can only use response_url and send up to 5 messages total
-        msg_args = (dict(json=dict(text=msg)) for msg in msgs[:5])
+        msg_args = (dict(json=dict(text=msg, response_type='in_channel')) for msg in msgs[:5])
         request_fn = asyncpartial(request_in_loop, 'POST', si.response_url)
     else:
         msg_args = (dict(text=msg) for msg in msgs)
@@ -42,9 +42,16 @@ async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0.):
 
     async def _helper():
         for msg in msg_args:
-            await request_fn(**msg)
-            if delay_in_secs > 0:
-                await asyncio.sleep(delay_in_secs)
+            # while True:
+            #     try:
+            await asyncio.gather(request_fn(**msg), asyncio.sleep(delay_in_secs))
+                # except SlackApiError as e:
+                #     if e.response['error'] != 'ratelimited':
+                #         raise
+                #     print(f'we were ratelimited: {msg}')
+                #     await asyncio.sleep(4)
+                #     continue
+                # break
 
     asyncio.create_task(_helper())
 

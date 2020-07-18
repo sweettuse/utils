@@ -4,13 +4,14 @@ import random
 import time
 from contextlib import suppress
 
-from lifxlan3.routines.tile.snek import run_as_ambiance, SnekSucceeds, SnekDead
+from lifxlan3.routines.tile.cli import run_animate
+from lifxlan3.routines.tile.snek import run_as_ambiance
 
 from utils.lights.tile_game_of_life import TileGameOfLife
 
-
 gol = lambda: TileGameOfLife.from_random().run()
-funcs = [run_as_ambiance, gol, gol]
+anim = lambda: run_animate(3, in_terminal=False, as_ambiance=True, duration_secs=60)
+funcs = [run_as_ambiance, gol, gol, anim, anim]
 
 
 def run_on_rpi():
