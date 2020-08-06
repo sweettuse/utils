@@ -1,17 +1,17 @@
 import asyncio
-from concurrent.futures.thread import ThreadPoolExecutor
+import random
 from io import BytesIO
-from pathlib import Path
 
-from lifxlan3 import timer
+import wikipedia
 from more_itertools import first
+from pyphen import Pyphen
 from sanic.response import text
 
 from utils.slack_api import parse_config
 from utils.slack_api.big_emoji import resize_image, resize_gif
 from utils.slack_api.text_to_emoji import text_to_emoji
 from utils.web.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel, \
-    request_in_loop, no_dm
+    request_in_loop, no_dm, run_in_executor
 
 __author__ = 'acushner'
 
@@ -21,12 +21,15 @@ _admins = parse_config().admin_id_name_map
 DEFAULT_MULT = 6.
 MAX_MULT = 15.
 
+_pyphen = Pyphen(lang='en')
+
 
 @register_cmd
 @no_dm
 async def embiggen(si: SlackInfo):
     """emoji [size_multiple]
-    [size_multiple]: multiple to scale up/down emoji size by"""
+    [_size_multiple_]: multiple to scale up/down emoji size by
+    only works on custom emoji due to download issues from slack"""
     emoji, *rest = si.argstr.split()
     mult = min(MAX_MULT, float(first(rest, DEFAULT_MULT)))
     if mult <= 0:
@@ -61,9 +64,26 @@ async def embiggen(si: SlackInfo):
 
 
 @register_cmd
+async def hyphenate(si: SlackInfo):
+    """text
+    unnecessarily add hypens into text"""
+    await send_to_channel(si, '-'.join(map(_pyphen.inserted, si.argstr.split())))
+
+
+@register_cmd
+async def spongebob(si: SlackInfo):
+    """text
+    sPoNgEbOb-IfY tExT"""
+    funcs = [str.lower, str.upper]
+    res = ''.join(random.choice(funcs)(c) for c in si.argstr.lower())
+    await send_to_channel(si, f':spongebob: {res} :spongebob:')
+
+
+@register_cmd
 async def emojify(si: SlackInfo, *, reverse=False):
-    """text [emoji]
-    transform text into emoji representation in slack"""
+    """text [emoji
+    transform text into emoji representation in slack
+    works on all emoji"""
     data, *emoji = si.argstr.rsplit(maxsplit=1)
     emoji = first(emoji, '')
     if not (emoji.startswith(':') and emoji.endswith(':')):
@@ -113,8 +133,8 @@ async def incident(si: SlackInfo):
     desc [--list] [--del=id]
         register incident that occurred. e.g. 'an excel drag-down issue', 'a considerable brain fart'
         this will update the channel daily on how many days it's been since this issue, starting from today
-        optional: with _--list_: show all incidents you've created
-        optional: with _--del=id_: delete incident with _id_
+        [_--list_]: show all incidents you've created
+        [_--del=id_]: delete incident with _id_
     """
     is_admin = si.user_id in _admins and 'basic' not in si.flags
 
@@ -138,6 +158,24 @@ async def incident(si: SlackInfo):
     if res:
         return text(_format_incident_info(res))
     return text('must pass in a non-empty description')
+
+
+@register_cmd
+async def wiki(si: SlackInfo):
+    """search term[s]
+    get a quick summary from wikipedia based on search terms"""
+    search = await run_in_executor(lambda: wikipedia.search(si.argstr))
+    if not search:
+        return text(f'unable to find anything in wikipedia for _{si.argstr}_')
+
+    term = first(search)
+    try:
+        summary = await run_in_executor(lambda: wikipedia.summary(term, auto_suggest=False))
+    except wikipedia.DisambiguationError as e:
+        options = '\n'.join(e.args[1])
+        return text(f'try more specific text from the following:\n{options}')
+    else:
+        await send_to_channel(si, f'_from wikipedia_: *{si.argstr}* -> *{term}*', summary)
 
 
 def _format_incident_info(ii: IncidentInfo):

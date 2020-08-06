@@ -36,7 +36,7 @@ class TileGameOfLife:
     @classmethod
     def from_random(cls):
         return cls(random.choice(list(Patterns)), BaseColorFunc.from_random(), sleep_time=random.random() + 1,
-                   rotate_every=int(random.random() > .5) and random.randrange(1, 8),
+                   rotate_every=int(random.random() > .8) and random.randrange(1, 12),
                    run_time_secs=random.randint(60, 180))
 
     @property

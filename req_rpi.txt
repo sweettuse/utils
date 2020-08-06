@@ -18,3 +18,5 @@ slackclient
 freetype-py
 sanic
 slackblocks
+wikipedia
+pyphen

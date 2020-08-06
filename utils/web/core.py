@@ -8,7 +8,7 @@ from textwrap import dedent
 from typing import Optional, Any, Callable, Dict
 
 import requests
-from misty_py.utils import json_obj, asyncpartial
+from misty_py.utils import json_obj
 from sanic import Sanic
 from sanic.response import empty, text
 
@@ -35,23 +35,23 @@ async def send_to_channel(si: SlackInfo, *msgs, delay_in_secs=0.):
     if si.channel_id.startswith('D'):
         # dealing with direct message: can only use response_url and send up to 5 messages total
         msg_args = (dict(json=dict(text=msg, response_type='in_channel')) for msg in msgs[:5])
-        request_fn = asyncpartial(request_in_loop, 'POST', si.response_url)
+        request_fn = partial(request_in_loop, 'POST', si.response_url)
     else:
         msg_args = (dict(text=msg) for msg in msgs)
-        request_fn = asyncpartial(slack_api.post_message, si.channel_id)
+        request_fn = partial(slack_api.post_message, si.channel_id)
 
     async def _helper():
         for msg in msg_args:
             # while True:
             #     try:
             await asyncio.gather(request_fn(**msg), asyncio.sleep(delay_in_secs))
-                # except SlackApiError as e:
-                #     if e.response['error'] != 'ratelimited':
-                #         raise
-                #     print(f'we were ratelimited: {msg}')
-                #     await asyncio.sleep(4)
-                #     continue
-                # break
+            # except SlackApiError as e:
+            #     if e.response['error'] != 'ratelimited':
+            #         raise
+            #     print(f'we were ratelimited: {msg}')
+            #     await asyncio.sleep(4)
+            #     continue
+            # break
 
     asyncio.create_task(_helper())
 
@@ -97,11 +97,6 @@ def gen_help_str():
     return f'unloose the *tuse*:\n\n{help_str}'
 
 
-# @app.route('/test', methods=['POST'])
-# async def inspect(request):
-#     breakpoint()
-
-
 @app.route('/slack', methods=['POST'])
 async def _dispatch(request):
     """main entry point for slack requests
@@ -136,7 +131,10 @@ async def request_in_loop(method, url, json=None,
                           *, _headers: Optional[Dict[str, str]] = None):
     """make requests work in asyncio"""
     req_kwargs = json_obj.from_not_none(json=json, headers=_headers)
-    f = partial(requests.request, method, url, **req_kwargs)
+    return await run_in_executor(partial(requests.request, method, url, **req_kwargs))
+
+
+async def run_in_executor(f):
     return await asyncio.get_running_loop().run_in_executor(_pool, f)
 
 

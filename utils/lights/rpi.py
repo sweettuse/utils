@@ -10,7 +10,7 @@ from lifxlan3.routines.tile.snek import run_as_ambiance
 from utils.lights.tile_game_of_life import TileGameOfLife
 
 gol = lambda: TileGameOfLife.from_random().run()
-anim = lambda: run_animate(3, in_terminal=False, as_ambiance=True, duration_secs=60)
+anim = lambda: run_animate(sleep_secs=2, in_terminal=False, as_ambiance=True, duration_secs=60)
 funcs = [run_as_ambiance, gol, gol, anim, anim]
 
 

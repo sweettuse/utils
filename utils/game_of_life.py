@@ -24,7 +24,7 @@ class BSRule(NamedTuple):
     @classmethod
     def from_str(cls, s):
         b, s = s.split('/')
-        to_fs = lambda _s: frozenset(int(v) for v in _s[1:])
+        to_fs = lambda _s: frozenset(map(int, _s[1:]))
         return cls(to_fs(b), to_fs(s))
 
 
