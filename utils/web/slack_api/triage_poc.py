@@ -7,8 +7,8 @@ from slackblocks import SectionBlock, DividerBlock, Text
 
 __author__ = 'acushner'
 
-from utils.slack_api import UserType
-from utils.slack_api.api import SlackAPI
+from utils.web.slack_api import UserType
+from utils.web.slack_api.api import SlackAPI
 
 
 def _iter_triage(t):

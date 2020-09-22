@@ -26,10 +26,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+import string
+from functools import lru_cache
+from io import BytesIO
+from itertools import chain
 from pathlib import Path
-from typing import List
+from typing import List, NamedTuple
 
 import freetype
+import numpy as np
+from PIL import Image
+from lifxlan3 import Color, Colors, timer
+from lifxlan3.routines.tile.core import set_cm
+from lifxlan3.routines.tile.tile_utils import ColorMatrix, RC
+from more_itertools import collapse
 
 from utils.core import chunks
 
@@ -62,6 +72,20 @@ class Bitmap:
                 rows += ON if self.pixels[y * self.width + x] else OFF
             rows += '\n'
         return rows
+
+    def add_border(self, height_pct=10.) -> 'Bitmap':
+        n_pixels = int(self.height * height_pct // 100) + 1
+        bits = self.bits
+        width = self.width + 2 * n_pixels
+        height = self.height + 2 * n_pixels
+        lr_zeros = n_pixels * [0]
+        for r in bits:
+            r[:0] = lr_zeros
+            r.extend(lr_zeros)
+        extra_zero_rows = n_pixels * [width * [0]]
+        bits[:0] = extra_zero_rows
+        bits.extend(extra_zero_rows)
+        return Bitmap(width, height, bytearray(collapse(bits)))
 
     def bitblt(self, src, x, y):
         """Copy all pixels from `src` into this bitmap"""
@@ -160,11 +184,18 @@ class Glyph:
         return data
 
 
+class TextDims(NamedTuple):
+    width: int
+    height: int
+    baseline: int
+
+
 class Font:
     def __init__(self, filename, size):
         self.face = freetype.Face(filename)
         self.face.set_pixel_sizes(0, size)
 
+    @lru_cache(128)
     def glyph_for_character(self, char):
         # Let FreeType load the glyph for the given character and tell it to render
         # a monochromatic bitmap representation.
@@ -191,7 +222,7 @@ class Font:
         # which means that the pixel values are multiples of 64.
         return kerning.x // 64
 
-    def text_dimensions(self, text):
+    def text_dimensions(self, text) -> TextDims:
         """Return (width, height, baseline) of `text` rendered in the current font."""
         width = 0
         max_ascent = 0
@@ -214,9 +245,9 @@ class Font:
             previous_char = char
 
         height = max_ascent + max_descent
-        return (width, height, max_descent)
+        return TextDims(width, height, max_descent)
 
-    def render_text(self, text, width=None, height=None, baseline=None):
+    def render_text(self, text, width=None, height=None, baseline=None) -> Bitmap:
         """
         Render the given `text` into a Bitmap and return it.
         If `width`, `height`, and `baseline` are not specified they are computed using
@@ -247,23 +278,54 @@ class Font:
 
         return outbuffer
 
+    @timer
+    def to_image(self, text: str, color: Color = Colors.YELLOW) -> Image.Image:
+        bm = self.render_text(text).add_border(10)
+        print(bm.height)
+        color = color.rgb[:3]
+        colors = [[color if v else (0, 0, 0) for v in r] for r in chunks(bm.pixels, bm.width)]
+        return Image.fromarray(np.array(colors).astype(np.uint8))
+
+    def to_color_matrix(self, text: str, color: Color = Colors.YELLOW, height=16) -> ColorMatrix:
+        im = self.to_image(text, color)
+        width = int(im.width * height / im.height)
+        return ColorMatrix.from_image(im.resize((width, height), Image.ANTIALIAS))
+
 
 def load_font(font_name='Courier New.ttf', size=13):
     font_dir = Path(__file__).parent / 'assets/fonts'
     return Font(f'{font_dir}/{font_name}', size)
 
 
-if __name__ == '__main__':
-    # Be sure to place 'helvetica.ttf' (or any other ttf / otf font file) in the working directory.
-    # fnt = Font('helvetica.ttf', 24)
+def display_dimensions(font_name='Courier New.ttf', r=range(13, 50)):
+    """print out dimensions for a particular font in a particular range"""
+    print(font_name)
+    for size in r:
+        fnt = load_font(font_name, size)
+        print(size, fnt.text_dimensions(string.printable))
+    print(font_name)
 
+
+def _play():
     # Single characters
     fnt = load_font('Courier New.ttf', 13)
     ch = fnt.render_character('e')
-    print(ch.width, ch.height)
-    print(ch.bits)
-    print(repr(ch))
+    # print(ch.width, ch.height)
+    # print(ch.bits)
+    # print(repr(ch))
 
+    # ColorMatrix
+    fnt = load_font('Courier New.ttf', 16)
+    fnt = load_font('AmericanTypewriter.ttc', 100)
+    fnt = load_font('Courier New.ttf', 100)
+    cm = fnt.to_color_matrix('Niiiiiiiiice')
+    # im = fnt.to_image('hello==' * 10)
+    # return
+
+    from lifxlan3.routines.tile.core import set_cm, translate, Dir
+    translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3)
+    set_cm(cm, size=RC(16, 256), in_terminal=True, verbose=False)
+    return
     # Multiple characters
     txt = fnt.render_text('hello')
     print(repr(txt))
@@ -273,3 +335,9 @@ if __name__ == '__main__':
 
     # Choosing the baseline correctly
     print(repr(fnt.render_text('hello, world.')))
+
+
+if __name__ == '__main__':
+    # Be sure to place 'helvetica.ttf' (or any other ttf / otf font file) in the working directory.
+    # fnt = Font('helvetica.ttf', 24)
+    _play()

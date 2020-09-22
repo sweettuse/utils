@@ -1,14 +1,11 @@
 __author__ = 'acushner'
 
-from itertools import count
-from typing import List, Union
-
-from slackblocks import SectionBlock, Text, TextType
+from typing import List
 
 from utils.core import chunks, exhaust
 from utils.font_to_bitmap import load_font, Font, Bitmap
-from utils.slack_api import UserType, async_run
-from utils.slack_api.api import SlackAPI
+from utils.web.slack_api import UserType
+from utils.web.slack_api.api import SlackAPI
 
 NUM_SPACES = 6
 

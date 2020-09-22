@@ -12,6 +12,7 @@ silly>=1.1.0
 git+https://github.com/acushner-xaxis/misty_py.git
 git+https://github.com/sweettuse/lifxlan3.git
 git+https://github.com/sweettuse/cluegen.git
+fastapi
 flask
 requests>=2.22.0
 slackclient
@@ -20,3 +21,4 @@ sanic
 slackblocks
 wikipedia
 pyphen
+keyring

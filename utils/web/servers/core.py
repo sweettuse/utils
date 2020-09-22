@@ -12,9 +12,9 @@ from misty_py.utils import json_obj
 from sanic import Sanic
 from sanic.response import empty, text
 
-from utils.slack_api import UserType, parse_config
-from utils.slack_api.api import SlackAPI
-from utils.web.slack_info import SlackInfo
+from utils.web.slack_api import UserType, parse_config
+from utils.web.slack_api.api import SlackAPI
+from utils.web.servers.slack_info import SlackInfo
 
 app = Sanic(__name__)
 

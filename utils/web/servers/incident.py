@@ -1,10 +1,8 @@
 import atexit
 import os
 import pickle
-import shelve
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor
-from contextlib import suppress
 from functools import lru_cache, wraps
 from itertools import count
 from typing import Dict, List, NamedTuple, Set, Optional
@@ -12,7 +10,7 @@ from typing import Dict, List, NamedTuple, Set, Optional
 import arrow
 from cluegen import FrozenDatum
 
-from utils.slack_api import incident_store_path
+from utils.web.slack_api import incident_store_path
 
 __author__ = 'acushner'
 

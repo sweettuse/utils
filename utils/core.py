@@ -1,4 +1,7 @@
 import os
+import smtplib
+
+import keyring
 from memoize.wrapper import memoize
 import pickle
 import sys
@@ -19,6 +22,7 @@ _sentinel = object()
 
 class Pickle:
     def __init__(self, base_dir='/tmp/.pydata'):
+        os.makedirs(base_dir, exist_ok=True)
         self._base_dir = base_dir
 
     def filename(self, name):
@@ -236,6 +240,17 @@ class PosBaseModel(BaseModel):
 
         gets overridden dynamically, so no need to call `super().__init__`"""
         super().__init__(**kwargs)
+
+
+def sms(to: Union[str, List[str]], msg: str):
+    if isinstance(to, str):
+        to = [to]
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.ehlo()
+        from_email = keyring.get_password('email', 'main-address')
+        server.login(from_email, keyring.get_password('email', 'main'))
+        server.sendmail(from_email, to, msg)
 
 
 def __main():

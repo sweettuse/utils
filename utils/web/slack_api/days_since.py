@@ -5,9 +5,9 @@ from typing import List
 
 from slack.errors import SlackApiError
 
-from utils.slack_api import UserType, async_run
-from utils.slack_api.api import SlackAPI
-from utils.web.incident import Incident, init_incident_store
+from utils.web.slack_api import UserType, async_run
+from utils.web.slack_api.api import SlackAPI
+from utils.web.servers.incident import Incident, init_incident_store
 
 __author__ = 'acushner'
 

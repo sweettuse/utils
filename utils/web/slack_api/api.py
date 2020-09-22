@@ -11,7 +11,7 @@ from slackblocks import Message
 from slackblocks.blocks import Block
 
 from utils.core import aobject, async_memoize, make_iter, DataStore
-from utils.slack_api import parse_config, UserType, async_run
+from utils.web.slack_api import parse_config, UserType, async_run
 
 __author__ = 'acushner'
 
