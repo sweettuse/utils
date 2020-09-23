@@ -28,13 +28,10 @@
 # THE SOFTWARE.
 import string
 from functools import lru_cache
-from io import BytesIO
-from itertools import chain
 from pathlib import Path
 from typing import List, NamedTuple
 
 import freetype
-import numpy as np
 from PIL import Image
 from lifxlan3 import Color, Colors, timer
 from lifxlan3.routines.tile.core import set_cm
@@ -283,8 +280,8 @@ class Font:
         bm = self.render_text(text).add_border(10)
         print(bm.height)
         color = color.rgb[:3]
-        colors = [[color if v else (0, 0, 0) for v in r] for r in chunks(bm.pixels, bm.width)]
-        return Image.fromarray(np.array(colors).astype(np.uint8))
+        colors = bytearray(collapse(color if px else (0, 0, 0) for px in bm.pixels))
+        return Image.frombytes('RGB', (bm.width, bm.height), bytes(colors))
 
     def to_color_matrix(self, text: str, color: Color = Colors.YELLOW, height=16) -> ColorMatrix:
         im = self.to_image(text, color)
@@ -323,6 +320,8 @@ def _play():
     # return
 
     from lifxlan3.routines.tile.core import set_cm, translate, Dir
+    fnt.to_image('hello').show()
+    return
     translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3, pixels_per_step=4)
     # set_cm(cm, size=RC(16, 256), in_terminal=True, verbose=False)
     return
