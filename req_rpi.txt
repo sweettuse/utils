@@ -22,3 +22,5 @@ slackblocks
 wikipedia
 pyphen
 keyring
+memoize
+pydantic

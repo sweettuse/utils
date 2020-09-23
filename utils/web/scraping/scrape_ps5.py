@@ -20,7 +20,6 @@ _base_headers = {}
 
 registry = {}
 
-NUM_CONSEC_FOR_SUCCESS = 2
 
 
 class Site:
@@ -30,12 +29,13 @@ class Site:
     def __init__(self):
         self._last_success = arrow.Arrow.min
         self._consecutive_hits = 0
+        self.num_consec_for_success = 2
 
     def get(self):
         return requests.get(self.site, headers=self.headers)
 
     def run(self) -> bool:
-        if (self._consecutive_hits >= NUM_CONSEC_FOR_SUCCESS
+        if (self._consecutive_hits >= self.num_consec_for_success
                 and (arrow.now() - self._last_success).total_seconds() < 3600):
             return False
 
@@ -126,6 +126,9 @@ class BestBuy(Site):
 
 
 class Walmart(Site):
+    def __init__(self):
+        super().__init__()
+        self.num_consec_for_success = 4
 
     @classproperty
     def site(cls) -> str:
@@ -191,7 +194,7 @@ def query(*, debug=True):
             continue
 
         if f.result():
-            if inst.mark_success() >= NUM_CONSEC_FOR_SUCCESS:
+            if inst.mark_success() >= inst.num_consec_for_success:
                 res.append(inst.display_site[8:])
         else:
             inst.mark_failure()

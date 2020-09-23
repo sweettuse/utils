@@ -323,8 +323,8 @@ def _play():
     # return
 
     from lifxlan3.routines.tile.core import set_cm, translate, Dir
-    translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3)
-    set_cm(cm, size=RC(16, 256), in_terminal=True, verbose=False)
+    translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3, pixels_per_step=4)
+    # set_cm(cm, size=RC(16, 256), in_terminal=True, verbose=False)
     return
     # Multiple characters
     txt = fnt.render_text('hello')

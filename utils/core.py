@@ -1,16 +1,16 @@
 import os
-import smtplib
-
-import keyring
-from memoize.wrapper import memoize
 import pickle
+import smtplib
 import sys
 from collections import deque
 from functools import wraps, partial
 from io import BytesIO
-from itertools import islice, chain
+from itertools import islice
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Any, NamedTuple, List, Dict, Optional, Union
+from typing import Iterable, Any, NamedTuple, List, Dict, Union
+
+import keyring
+from memoize.wrapper import memoize
 from pydantic import BaseModel
 
 __author__ = 'acushner'
