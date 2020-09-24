@@ -27,7 +27,7 @@ def display_msgs():
     with suppress(Empty):
         while True:
             msg = msg_queue.get_nowait()
-            translate(fnt.to_color_matrix(f'!! {msg} !!'), in_terminal=True, split=False, dir=Dir.left, n_iterations=1,
+            translate(fnt.to_color_matrix(f'!! {msg} !!'), in_terminal=False, split=False, dir=Dir.left, n_iterations=1,
                       pixels_per_step=2, sleep_secs=.2)
             time.sleep(.5)
 
