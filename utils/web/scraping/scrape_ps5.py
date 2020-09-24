@@ -21,7 +21,6 @@ _base_headers = {}
 registry = {}
 
 
-
 class Site:
     def __init_subclass__(cls, **kwargs):
         registry[cls.__name__] = cls()
