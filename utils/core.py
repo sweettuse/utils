@@ -243,8 +243,7 @@ class PosBaseModel(BaseModel):
 
 
 def sms(to: Union[str, List[str]], msg: str):
-    if isinstance(to, str):
-        to = [to]
+    to = make_iter(to)
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.ehlo()

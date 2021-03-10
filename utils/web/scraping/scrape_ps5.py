@@ -25,10 +25,10 @@ class Site:
     def __init_subclass__(cls, **kwargs):
         registry[cls.__name__] = cls()
 
-    def __init__(self):
+    def __init__(self, num_for_succ=1):
         self._last_success = arrow.Arrow.min
         self._consecutive_hits = 0
-        self.num_consec_for_success = 2
+        self.num_consec_for_success = num_for_succ
 
     def get(self):
         return requests.get(self.site, headers=self.headers)
@@ -84,8 +84,11 @@ class Site:
 
 
 class Amazon(Site):
+    def __init__(self):
+        super().__init__(1)
+
     @classproperty
-    def _specific_headers(self):
+    def _specific_headers(cls):
         return {
             'authority': 'www.amazon.com',
             'pragma': 'no-cache',
@@ -94,7 +97,7 @@ class Amazon(Site):
             'upgrade-insecure-requests': '1',
             'user-agent': 'Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.64 Safari/537.36',
             'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-            'cookie': 'skin=noskin; session-id=142-5175355-7393049; ubid-main=135-5649029-0755957; lc-main=en_US; aws-priv=eyJ2IjoxLCJldSI6MCwic3QiOjB9; aws_lang=en; s_cc=true; aws-mkto-trk=id%3A112-TZM-766%26token%3A_mch-aws.amazon.com-1574372768850-43600; aws-account-alias=952256534162; regStatus=registered; aws-ubid-main=456-1538584-1542487; lwa-context=4a8b9c8f6f6a804f8e5e91e305d5954c; appstore-devportal-locale=en_US; aws-userInfo=%7B%22arn%22%3A%22arn%3Aaws%3Aiam%3A%3A952256534162%3Auser%2Fadam.cushner%40xaxis.com%22%2C%22alias%22%3A%22952256534162%22%2C%22username%22%3A%22adam.cushner%2540xaxis.com%22%2C%22keybase%22%3A%22BbVLVtQj7lxDATtuBpms9AgzmXw9VXzUqmtAeD%2Ft%2Fto%5Cu003d%22%2C%22issuer%22%3A%22http%3A%2F%2Fsignin.aws.amazon.com%2Fsignin%22%2C%22signinType%22%3A%22PUBLIC%22%7D; x-main=M0idOlIDPHAomgfylFM3FtrN6XGvlx0b; at-main=Atza|IwEBIFdvI3wKJALGfQ6sRvk9_sc8chvtaTl2e-LpmwvDWiKSmeBqHHwuBe_jPVe89GS6pZzr5SpdPvZrsxo6Wh25zwIlab2lLyrTv5z_SjjhdRco2x84IaQosPDw8cfJ_1hg9bhaiADWKVGoZEZTGhXryOA7FFcPA-Rt8GUpuG92GQRMOyq15GgqinbjQacW1JA-c3E6jho7bIsguGjOl6bykr--; sess-at-main="GUOtDmhAZMLqy/YccevLO/Mm9Cl9Ps1JpVVhl675rw0="; sst-main=Sst1|PQHNXUHpJFAMfVXRc1gyonIOCQZXMzYirlXVGLi5KK1cvLdSvihTlNuA5AvjERT03WkwcF78byZ1yiiWrkja8J2dM8y6kw6mY4o5vNN7ZkF-r24KXVgdGIbGPA-eae_1lv8PDWlD-cp_JXPHjxwXp5lQvP-L-zs9eTnAgATihJ4wS11HYI81639vKdU417vRd99PhqMCaI2ToBrf-8fYXwMEHVkzSheoOJG27yvHTvYacW8JeYEdwNSuroPCTl6eJNGc-cts6WvNKFlJJk5fNWsW4nn1mRhEo6MFWgq2yGHzVEE; session-id-time=2082787201l; i18n-prefs=USD; csrf=-1054820603; session-token="gGfr02R3FJuycXzV110KzSRxq7GC4j/1o7KhHJ2XINYgwdeKtB+SPwGowmKd2u1Dn+8127yVhZVY8VlRmhYBzpVQ/nqfARAkCIOtutL2AOJyZN6/2EVyrKS0d0u2B7CxK4M1hOnWTqrM0z/FYHZdBBCYP4w32lKGae1iOrnrpymleoULWHgIwnG250uE/jgbXDggRcc3Q8lIMw+iA2oQYg=="; csm-hit=tb:XGKKNANNEEWRESRG9HZW+s-MBTZ4RBQ8RSBPYDFN2WA|1600618985320&t:1600618985321&adb:adblk_yes',
+            # 'cookie': 'skin=noskin; session-id=142-5175355-7393049; ubid-main=135-5649029-0755957; lc-main=en_US; aws-priv=eyJ2IjoxLCJldSI6MCwic3QiOjB9; aws_lang=en; s_cc=true; aws-mkto-trk=id%3A112-TZM-766%26token%3A_mch-aws.amazon.com-1574372768850-43600; aws-account-alias=952256534162; regStatus=registered; aws-ubid-main=456-1538584-1542487; lwa-context=4a8b9c8f6f6a804f8e5e91e305d5954c; appstore-devportal-locale=en_US; aws-userInfo=%7B%22arn%22%3A%22arn%3Aaws%3Aiam%3A%3A952256534162%3Auser%2Fadam.cushner%40xaxis.com%22%2C%22alias%22%3A%22952256534162%22%2C%22username%22%3A%22adam.cushner%2540xaxis.com%22%2C%22keybase%22%3A%22BbVLVtQj7lxDATtuBpms9AgzmXw9VXzUqmtAeD%2Ft%2Fto%5Cu003d%22%2C%22issuer%22%3A%22http%3A%2F%2Fsignin.aws.amazon.com%2Fsignin%22%2C%22signinType%22%3A%22PUBLIC%22%7D; x-main=M0idOlIDPHAomgfylFM3FtrN6XGvlx0b; at-main=Atza|IwEBIFdvI3wKJALGfQ6sRvk9_sc8chvtaTl2e-LpmwvDWiKSmeBqHHwuBe_jPVe89GS6pZzr5SpdPvZrsxo6Wh25zwIlab2lLyrTv5z_SjjhdRco2x84IaQosPDw8cfJ_1hg9bhaiADWKVGoZEZTGhXryOA7FFcPA-Rt8GUpuG92GQRMOyq15GgqinbjQacW1JA-c3E6jho7bIsguGjOl6bykr--; sess-at-main="GUOtDmhAZMLqy/YccevLO/Mm9Cl9Ps1JpVVhl675rw0="; sst-main=Sst1|PQHNXUHpJFAMfVXRc1gyonIOCQZXMzYirlXVGLi5KK1cvLdSvihTlNuA5AvjERT03WkwcF78byZ1yiiWrkja8J2dM8y6kw6mY4o5vNN7ZkF-r24KXVgdGIbGPA-eae_1lv8PDWlD-cp_JXPHjxwXp5lQvP-L-zs9eTnAgATihJ4wS11HYI81639vKdU417vRd99PhqMCaI2ToBrf-8fYXwMEHVkzSheoOJG27yvHTvYacW8JeYEdwNSuroPCTl6eJNGc-cts6WvNKFlJJk5fNWsW4nn1mRhEo6MFWgq2yGHzVEE; session-id-time=2082787201l; i18n-prefs=USD; csrf=-1054820603; session-token="gGfr02R3FJuycXzV110KzSRxq7GC4j/1o7KhHJ2XINYgwdeKtB+SPwGowmKd2u1Dn+8127yVhZVY8VlRmhYBzpVQ/nqfARAkCIOtutL2AOJyZN6/2EVyrKS0d0u2B7CxK4M1hOnWTqrM0z/FYHZdBBCYP4w32lKGae1iOrnrpymleoULWHgIwnG250uE/jgbXDggRcc3Q8lIMw+iA2oQYg=="; csm-hit=tb:XGKKNANNEEWRESRG9HZW+s-MBTZ4RBQ8RSBPYDFN2WA|1600618985320&t:1600618985321&adb:adblk_yes',
             'sec-fetch-site': 'none',
             'sec-fetch-mode': 'navigate',
             'sec-fetch-dest': 'document',
@@ -102,7 +105,7 @@ class Amazon(Site):
         }
 
     @classproperty
-    def site(self) -> str:
+    def site(cls) -> str:
         return 'https://www.amazon.com/gp/product/B08FC5L3RG?pf_rd_r=DXM1T6PXA6YV34513R3K&th=1'
 
     def _parse(self, resp: Response) -> bool:
@@ -121,21 +124,47 @@ class BestBuy(Site):
         return f'https://api.bestbuy.com/v1/products/6426149.json?apiKey={keyring.get_password("scraping", "bestbuy")}'
 
     def _parse(self, resp: Response) -> bool:
-        return resp.json()['orderable'] != 'ComingSoon'
+        return resp.json()['orderable'] not in {'ComingSoon', 'SoldOut'}
 
 
-class Walmart(Site):
-    def __init__(self):
-        super().__init__()
-        self.num_consec_for_success = 4
-
+class PlayStation(Site):
     @classproperty
     def site(cls) -> str:
-        return 'https://www.walmart.com/ip/PlayStation5-Console/363472942'
+        return 'https://direct.playstation.com/en-us/consoles/console/playstation5-console.3005816'
 
     def _parse(self, resp: Response) -> bool:
-        return '>Out of stock<' not in resp.text
+        return resp.json()['orderable'] not in {'ComingSoon', 'SoldOut'}
 
+    @classproperty
+    def _specific_headers(cls):
+        return {
+            'accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            'accept-encoding': "gzip, deflate, br",
+            'accept-language': "en-US,en;q=0.9",
+            'cache-control': "max-age=0",
+            'referer': "https://direct.playstation.com/en-us/consoles/console/playstation5-console.3005816",
+            'sec-fetch-dest': "document",
+            'sec-fetch-mode': "navigate",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-user': "?1",
+            'upgrade-insecure-requests': "1",
+            'user-agent': "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Mobile Safari/537.36",
+
+        }
+
+
+# class Walmart(Site):
+#     def __init__(self):
+#         super().__init__()
+#         self.num_consec_for_success = 4
+#
+#     @classproperty
+#     def site(cls) -> str:
+#         return 'https://www.walmart.com/ip/PlayStation5-Console/363472942'
+#
+#     def _parse(self, resp: Response) -> bool:
+#         return '>Out of stock<' not in resp.text
+#
 
 # class GameStop(Site):
 #     @classproperty

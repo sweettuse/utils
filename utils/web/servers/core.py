@@ -67,8 +67,7 @@ def register_cmd(func: Optional[Callable[[SlackInfo], Any]] = None,
     if not name:
         name = func.__name__
 
-    name = name.lower()
-    _cmds[name] = func
+    _cmds[name.lower()] = func
 
     return func
 
@@ -119,7 +118,7 @@ async def _dispatch(request):
 def _validate_message(request):
     ts = request.headers['x-slack-request-timestamp']
     if abs(time.time() - int(ts)) > 10:
-        print('message too late')
+        print('message too old')
         return False
 
     sig = request.headers['x-slack-signature']

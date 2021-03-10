@@ -1,21 +1,17 @@
 import random
+from dataclasses import dataclass, asdict
 from enum import Enum
 from io import BytesIO
 from typing import Optional
 from uuid import uuid4
 
 import simpleaudio as sa
-
-from dataclasses import dataclass, asdict
-
-from lifxlan3 import localtimer, timer
+from lifxlan3 import timer
 from misty_py.utils import classproperty
 from tones import SINE_WAVE, SQUARE_WAVE, TRIANGLE_WAVE, SAWTOOTH_WAVE
 from tones.mixer import Mixer
 
 __author__ = 'acushner'
-
-from tones.tone import Samples
 
 from utils.core import exhaust
 
@@ -54,8 +50,8 @@ def fun(wave_type: WaveType, notes: Optional[str] = None, mixer: Optional[Mixer]
                 octave -= 1
             else:
                 buckets = notes, nums = [], []
-                exhaust(buckets[c.isdigit()].append(c) for c in n)
-                mult = int(''.join(nums)) if nums else 1
+                exhaust(buckets[c.isdigit() or c == '.'].append(c) for c in n)
+                mult = float(''.join(nums)) if nums else 1
                 note = ''.join(notes)
                 if note == 's':
                     mixer.add_note(name, 'a', duration=mult * duration, octave=octave, amplitude=0)
@@ -93,15 +89,36 @@ def _right() -> str:
 def _left() -> str:
     return ('- 2c + 2c - 2f + 2c - 2eb + 2c - 2d 2b c g f g ab f eb f g eb d eb f d c d '
             '2eb 2c 2f 2d 2g 2f 2g 2eb 2ab 2g 2a 2f 2bb 2a 2b 2g '
-            '+ c - ab g ab bb g f g ab 4s eb d c'
+            '+ c - ab g ab bb g f g ab 4s + eb d c'
             )
 
 
-def __main():
+def bach():
     dur = .15
     mixer = fun(WaveType.sine, _right(), duration=dur)
     fun(WaveType.triangle, _left(), mixer, duration=dur)
-    play(to_wav(mixer))
+    output = to_wav(mixer)
+    play(output)
+
+
+def outlier():
+    offset = '- - '
+    notes = 'c g + c - eb bb + eb - d + d - a ab eb + c db - ab db '
+    dur = .47
+    mixer = fun(WaveType.sawtooth, offset + notes * 3, duration=dur)
+    wav = to_wav(mixer)
+    with open('/tmp/outlier.wav', 'wb') as f:
+        f.write(wav.read())
+    play(wav)
+
+
+def all_notes():
+    pass
+
+
+def __main():
+    # return outlier()
+    return bach()
 
 
 if __name__ == '__main__':

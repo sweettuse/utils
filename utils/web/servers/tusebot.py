@@ -18,8 +18,8 @@ __author__ = 'acushner'
 from utils.web.servers.incident import IncidentInfo, init_incident_store
 
 _admins = parse_config().admin_id_name_map
-DEFAULT_MULT = 6.
-MAX_MULT = 15.
+DEFAULT_SIZE_MULT = 6.
+MAX_SIZE_MULT = 15.
 
 _pyphen = Pyphen(lang='en')
 
@@ -31,7 +31,7 @@ async def embiggen(si: SlackInfo):
     [_size_multiple_]: multiple to scale up/down emoji size by
     only works on custom emoji due to download issues from slack"""
     emoji, *rest = si.argstr.split()
-    mult = min(MAX_MULT, float(first(rest, DEFAULT_MULT)))
+    mult = min(MAX_SIZE_MULT, float(first(rest, DEFAULT_SIZE_MULT)))
     if mult <= 0:
         return text(f'invalid mult: {mult}')
 
@@ -66,7 +66,7 @@ async def embiggen(si: SlackInfo):
 @register_cmd
 async def hyphenate(si: SlackInfo):
     """text
-    unnecessarily add hypens into text"""
+    unnecessarily add hyphens into text"""
     await send_to_channel(si, '-'.join(map(_pyphen.inserted, si.argstr.split())))
 
 
@@ -74,8 +74,7 @@ async def hyphenate(si: SlackInfo):
 async def spongebob(si: SlackInfo):
     """text
     sPoNgEbOb-IfY tExT"""
-    funcs = [str.lower, str.upper]
-    res = ''.join(random.choice(funcs)(c) for c in si.argstr.lower())
+    res = ''.join(random.choice(opts) for opts in zip(si.argstr.lower(), si.argstr.upper()))
     await send_to_channel(si, f':spongebob: {res} :spongebob:')
 
 
@@ -123,7 +122,10 @@ async def help_(_=None):
     return text(gen_help_str())
 
 
-_incident_store = init_incident_store()
+try:
+    _incident_store = init_incident_store()
+except:
+    _incident_store = None
 
 
 @register_cmd
