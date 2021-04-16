@@ -80,7 +80,7 @@ async def spongebob(si: SlackInfo):
 
 @register_cmd
 async def emojify(si: SlackInfo, *, reverse=False):
-    """text [emoji
+    """text [emoji]
     transform text into emoji representation in slack
     works on all emoji"""
     data, *emoji = si.argstr.rsplit(maxsplit=1)

@@ -107,8 +107,8 @@ def outlier():
     dur = .47
     mixer = fun(WaveType.sawtooth, offset + notes * 3, duration=dur)
     wav = to_wav(mixer)
-    with open('/tmp/outlier.wav', 'wb') as f:
-        f.write(wav.read())
+    # with open('/tmp/outlier.wav', 'wb') as f:
+    #     f.write(wav.read())
     play(wav)
 
 
