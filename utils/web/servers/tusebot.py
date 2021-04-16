@@ -10,8 +10,8 @@ from sanic.response import text
 from utils.web.slack_api import parse_config
 from utils.web.slack_api.big_emoji import resize_image, resize_gif
 from utils.web.slack_api.text_to_emoji import text_to_emoji
-from utils.web.servers.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, send_to_channel, \
-    request_in_loop, no_dm, run_in_executor
+from utils.web.servers.core import register_cmd, SlackInfo, slack_api, app, init_slack_api, gen_help_str, \
+    send_to_channel, request_in_loop, no_dm, run_in_executor
 
 __author__ = 'acushner'
 
@@ -178,9 +178,6 @@ async def wiki(si: SlackInfo):
         return text(f'try more specific text from the following:\n{options}')
     else:
         await send_to_channel(si, f'_from wikipedia_: *{si.argstr}* -> *{term}*', summary)
-
-
-# TODO: fun facts bot - start with poop facts
 
 
 def _format_incident_info(ii: IncidentInfo):
