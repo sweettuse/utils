@@ -252,6 +252,9 @@ def sms(to: Union[str, List[str]], msg: str):
         server.sendmail(from_email, to, msg)
 
 
+mapt = lambda fn, *args: tuple(map(fn, *args))
+
+
 def __main():
     class Model(PosBaseModel):
         a: int

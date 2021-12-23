@@ -6,7 +6,7 @@ from contextlib import suppress
 from itertools import repeat, chain
 from queue import Queue, Empty
 
-from lifxlan3 import Dir
+from lifxlan3 import Dir, LifxLAN
 from lifxlan3.routines.tile.cli import run_animate
 from lifxlan3.routines.tile.core import get_tile_chain, translate
 from lifxlan3.routines.tile.snek import run_as_ambiance
@@ -41,6 +41,8 @@ func_weights = {run_as_ambiance: 10,
                 anim: 20,
                 _get_weather: 5,
                 }
+# func_weights = {run_as_ambiance: 10}
+
 funcs = [f for fn, num_times in func_weights.items() for f in repeat(fn, num_times)]
 
 

@@ -139,4 +139,4 @@ Overload.boo = lambda s, a: 'wow with 1'
 print(obj.boo())
 print(obj.boo(2))
 
-(obj.foo(*[4] * 8))
+(obj.foo(*[4] * 8))  # this will fail
