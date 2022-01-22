@@ -2,7 +2,7 @@ __author__ = 'acushner'
 
 from typing import List
 
-from utils.core import chunks, exhaust
+from utils.core import chunk, exhaust
 from utils.lights.font_to_bitmap import load_font, Font, Bitmap
 from utils.web.slack_api import UserType
 from utils.web.slack_api.api import SlackAPI
@@ -84,7 +84,7 @@ async def _blocks_time():
     font = load_font('Comic Sans MS.ttf', 13)
     blocks = text_to_emoji('abcdef', 'thumbsup', font, reverse=False)
     print(len(blocks))
-    for cur_blocks in chunks(blocks, 50):
+    for cur_blocks in chunk(blocks, 50):
         await sa.post_message('fake', blocks=cur_blocks)
 
 

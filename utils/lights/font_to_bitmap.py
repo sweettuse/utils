@@ -39,7 +39,7 @@ from lifxlan3.routines.tile.tile_utils import ColorMatrix, RC
 from more_itertools import collapse
 from utils.assets_path import ASSETS_PATH
 
-from utils.core import chunks
+from utils.core import chunk
 
 ON = '\u2588'
 ON = '#'
@@ -60,7 +60,7 @@ class Bitmap:
 
     @property
     def bits(self) -> List[List[int]]:
-        return list(chunks(self.pixels, self.width))
+        return list(chunk(self.pixels, self.width))
 
     def __repr__(self):
         """Return a string representation of the bitmap's pixels."""
