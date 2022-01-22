@@ -22,7 +22,7 @@ def _iter_triage(t):
 async def _triage(sa, channel):
     t = json_obj(U.Pickle().read('err_dict'))
     header, *msgs = _iter_triage(t)
-    await sa.post_message(channel, blocks=next(_iter_triage(t)))
+    await sa.post_message(channel, blocks=header)
     for msg in msgs:
         await sa.post_message(channel, blocks=DividerBlock())
         if msg:

@@ -1,6 +1,6 @@
 from functools import lru_cache
-from pathlib import Path
 from typing import NamedTuple, Union, Dict
+from utils.assets_path import ASSETS_PATH
 
 import requests
 
@@ -17,6 +17,7 @@ class LatLon(NamedTuple):
 
 
 class _ZC:
+    """zip code wrapper"""
     @property
     @lru_cache(1)
     def _zip_codes(self):
@@ -24,7 +25,7 @@ class _ZC:
             zc, lat, lon = s.split(',')
             return zc, LatLon(float(lat), float(lon))
 
-        with open(Path(__file__).parent / 'assets/zip/zipcodes.txt') as f:
+        with open(ASSETS_PATH / 'zip/zipcodes.txt') as f:
             next(f)
             return dict(map(to_zc_ll, f))
 

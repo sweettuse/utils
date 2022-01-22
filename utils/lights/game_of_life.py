@@ -2,9 +2,9 @@ from __future__ import annotations
 import time
 from collections import Counter
 from itertools import product
-from pathlib import Path
 from typing import NamedTuple, FrozenSet, Set, Optional
 
+from utils.assets_path import ASSETS_PATH
 from utils.core import Coord
 import utils.core as U
 
@@ -40,8 +40,12 @@ class GameOfLife:
         return cls(p.rule, p.start)
 
     def tick(self):
-        living_neighbor_count = Counter(c + offset for c in self.alive for offset in _neighbor_offsets)
-        res = {c for c, v in living_neighbor_count.items() if v in self.rule.born} - self.alive
+        living_neighbor_count = Counter(c + offset
+                                        for c in self.alive
+                                        for offset in _neighbor_offsets)
+        res = {c
+               for c, v in living_neighbor_count.items()
+               if c not in self.alive and v in self.rule.born}
         res.update(c for c in self.alive if living_neighbor_count[c] in self.rule.survive)
         self.alive = res
 
@@ -64,7 +68,7 @@ class Pattern(NamedTuple):
 
     @classmethod
     def _parse_file(cls, fname):
-        with open(Path(__file__).parent / 'assets' / fname) as f:
+        with open(ASSETS_PATH / fname) as f:
             return frozenset(Coord(c_num, r_num)
                              for r_num, r in enumerate(l for l in f if not l.startswith('!'))
                              for c_num, v in enumerate(r)

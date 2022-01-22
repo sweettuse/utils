@@ -3,7 +3,7 @@ __author__ = 'acushner'
 from typing import List
 
 from utils.core import chunks, exhaust
-from utils.font_to_bitmap import load_font, Font, Bitmap
+from utils.lights.font_to_bitmap import load_font, Font, Bitmap
 from utils.web.slack_api import UserType
 from utils.web.slack_api.api import SlackAPI
 

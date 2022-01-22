@@ -8,7 +8,7 @@ from lifxlan3 import Colors, timer
 from lifxlan3.routines.tile.core import set_cm
 from lifxlan3.routines.tile.tile_utils import RC, ColorMatrix
 
-from utils.game_of_life import GameOfLife, Patterns, Pattern, BigPatterns
+from utils.lights.game_of_life import GameOfLife, Patterns, Pattern, BigPatterns
 from utils.lights.color_func import ColorFunc, BaseColorFunc, PhaseColorFunc, default_color_func
 
 __author__ = 'acushner'

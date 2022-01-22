@@ -246,8 +246,6 @@ def __main():
         print('.', end='', flush=True)
         query(debug=False)
         time.sleep(30)
-    # r = Pickle().read('resp')
-    # query()
 
 
 if __name__ == '__main__':

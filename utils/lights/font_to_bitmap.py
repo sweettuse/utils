@@ -37,6 +37,7 @@ from lifxlan3 import Color, Colors, timer
 from lifxlan3.routines.tile.core import set_cm
 from lifxlan3.routines.tile.tile_utils import ColorMatrix, RC
 from more_itertools import collapse
+from utils.assets_path import ASSETS_PATH
 
 from utils.core import chunks
 
@@ -290,7 +291,7 @@ class Font:
 
 
 def load_font(font_name='Courier New.ttf', size=13):
-    font_dir = Path(__file__).parent / 'assets/fonts'
+    font_dir = ASSETS_PATH / 'fonts'
     return Font(f'{font_dir}/{font_name}', size)
 
 
@@ -316,10 +317,10 @@ def _play():
     fnt = load_font('AmericanTypewriter.ttc', 100)
     fnt = load_font('Courier New.ttf', 100)
     cm = fnt.to_color_matrix('Niiiiiiiiice', height=8)
-    from lifxlan3.routines.tile.core import set_cm, translate, Dir
-    set_cm(cm, size=RC(8, 256), in_terminal=True, verbose=False)
-    return
-    # im = fnt.to_image('hello==' * 10)
+    # from lifxlan3.routines.tile.core import set_cm, translate, Dir
+    # set_cm(cm, size=RC(8, 256), in_terminal=True, verbose=False)
+    # return
+    im = fnt.to_image('hello==' * 10)
     # return
 
     from lifxlan3.routines.tile.core import set_cm, translate, Dir

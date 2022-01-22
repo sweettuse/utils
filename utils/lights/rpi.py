@@ -3,17 +3,17 @@ __author__ = 'acushner'
 import random
 import time
 from contextlib import suppress
-from itertools import repeat, chain
+from itertools import repeat
 from queue import Queue, Empty
 
-from lifxlan3 import Dir, LifxLAN
+from lifxlan3 import Dir
 from lifxlan3.routines.tile.cli import run_animate
-from lifxlan3.routines.tile.core import get_tile_chain, translate
+from lifxlan3.routines.tile.core import translate
 from lifxlan3.routines.tile.snek import run_as_ambiance
 
-from utils.font_to_bitmap import load_font
+from utils.lights.font_to_bitmap import load_font
 from utils.lights.tile_game_of_life import TileGameOfLife
-from utils.weather import weather
+from utils.lights.weather import weather
 
 gol = lambda: TileGameOfLife.from_random().run()
 anim = lambda: run_animate(sleep_secs=2, in_terminal=False, as_ambiance=True, duration_secs=60)

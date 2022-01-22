@@ -8,6 +8,8 @@ __author__ = 'acushner'
 
 log = logging.getLogger(__name__)
 
+PoolOrNumThreads = Optional[Union[int, ThreadPoolExecutor, ProcessPoolExecutor]]
+
 
 class WaitPool:
     """
@@ -34,12 +36,13 @@ class WaitPool:
     """
     _threads_per_pool = 8
 
-    def __init__(self, pool: Optional[Union[int, ThreadPoolExecutor, ProcessPoolExecutor]] = None):
+    def __init__(self,
+                 pool: PoolOrNumThreads = None):
         self._pool = self._init_pool(pool)
         self._local = local()
 
     @staticmethod
-    def _init_pool(pool: Optional[Union[int, ThreadPoolExecutor, ProcessPoolExecutor]]):
+    def _init_pool(pool: PoolOrNumThreads):
         if isinstance(pool, (ProcessPoolExecutor, ThreadPoolExecutor)):
             return pool
 
@@ -95,6 +98,9 @@ class WaitPool:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.wait()
+
+
+__all__ = ['WaitPool']
 
 
 def __main():
