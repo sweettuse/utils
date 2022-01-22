@@ -27,11 +27,15 @@ def move_to_completed(page: Pages):
         except CopyError as e:
             print(page.name, type(e), str(e))
 
+    return len(to_move)
+
 
 def move_all_completeds():
-    pool = ThreadPoolExecutor(min(len(Pages), 8))
-    futures = [pool.submit(move_to_completed, p) for p in Pages]
-    wait(futures)
+    pool = ThreadPoolExecutor(8)
+    futures = {p: pool.submit(move_to_completed, p) for p in Pages}
+    for p, f in futures.items():
+        res = f.exception() or f.result()
+        print(p, res)
 
 
 def __main():

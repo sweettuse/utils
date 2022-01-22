@@ -14,7 +14,6 @@ def parse_text(text: list[json_obj]) -> str:
     return ''.join(res)
 
 
-
 def get_page(page: Pages):
     blocks = Block.from_id(page.value)
     cur = []

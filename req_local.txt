@@ -1,0 +1,5 @@
+-r req_rpi.txt
+-r requirements.txt
+jupyter
+jupyter-client==6.1.12
+rich[jupyter]
