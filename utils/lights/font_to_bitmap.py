@@ -27,6 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import string
+from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from typing import List, NamedTuple
@@ -290,7 +291,19 @@ class Font:
         return ColorMatrix.from_image(im.resize((width, height), Image.ANTIALIAS))
 
 
+class Fonts(Enum):
+    typewriter = 'AmericanTypewriter.ttc'
+    comic_sans = 'Comic Sans MS.ttf'
+    courier_new = 'Courier New.ttf'
+    futura = 'Futura.ttc'
+    jet_brains_mono = 'JetBrainsMono-Light.ttf'
+    menlo = 'Menlo.ttc'
+    papyrus = 'Papyrus.ttc'
+
+
 def load_font(font_name='Courier New.ttf', size=13):
+    if isinstance(font_name, Fonts):
+        font_name = font_name.value
     font_dir = ASSETS_PATH / 'fonts'
     return Font(f'{font_dir}/{font_name}', size)
 

@@ -229,5 +229,3 @@ def sms(to: Union[str, List[str]], msg: str):
 
 
 __all__ = generate__all__(globals(), _excluded)
-
-print(__all__)
