@@ -1,3 +1,6 @@
+from collections import defaultdict
+from random import choice
+
 from rich import print
 from rich.console import Console
 from rich.emoji import Emoji, EMOJI
@@ -5,8 +8,30 @@ from rich.table import Table
 from utils.lights.font_to_bitmap import load_font, Fonts
 from utils.core import generate__all__
 
-_excluded = set(globals())
-console = Console(width=200)
+__excluded = set(globals())
+
+_console = Console(width=200)
+
+_emoji_to_name = {v: k for k, v in EMOJI.items()}
+_emoji_name_map = _emoji_to_name
+
+
+def _get_inconsistent_width_emoji():
+    def _inconsistent_width(n):
+        return (n.startswith(('flag_for', 'regional_indicator'))
+                or n.endswith('skin_tone'))
+    return {e for name, e in EMOJI.items() if _inconsistent_width(name)}
+
+
+def _init_emoji_list():
+    return list(set(EMOJI.values()) - _get_inconsistent_width_emoji())
+
+
+_emoji_list = _init_emoji_list()
+
+
+def random_emoji():
+    return choice(_emoji_list)
 
 
 def _convert_bits(bits, emoji, flip) -> list[str]:
@@ -23,17 +48,23 @@ def _with_border(bits) -> list[list[int]]:
 
 
 def emoji_text(*lines: str,
-               emoji: str = 'saxophone',
+               emoji: str = None,
                font: Fonts = Fonts.courier_new,
-               size: int = 11,
+               size: int = 13,
                flip: bool = False):
-    emoji = str(Emoji(emoji.strip(':')))
+    print('before', emoji)
+    emoji = emoji or random_emoji()
+    print('after', emoji)
+    if emoji.isascii():
+        print('i am ascii')
+        emoji = str(Emoji(emoji.strip(':')))
     font = load_font(font, size)
     res = []
     for line in lines:
         bits = font.render_text(line).bits
         bits = _with_border(bits)
         res.append('\n'.join(_convert_bits(bits, emoji, flip)))
+    print(_emoji_name_map[emoji])
     return res
 
 
@@ -66,10 +97,11 @@ def sample_emoji_text(text,
 
 
 def __main():
-    print(*emoji_text('abcdefghijklmno', emoji='poop', flip=True))
+    print(random_emoji())
+    print(*emoji_text('jygify', flip=False, size=20, font=Fonts.comic_sans))
 
 
 if __name__ == '__main__':
     __main()
 
-__all__ = generate__all__(globals(), _excluded)
+__all__ = generate__all__(globals(), __excluded)

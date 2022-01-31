@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import time
 from collections import deque
 from functools import partial, wraps
-from itertools import islice
+from itertools import islice, tee
 from typing import Iterable, Any
 
 from memoize.wrapper import memoize
@@ -139,6 +141,12 @@ def timer(func):
                   f'ncalls={ncalls} for {total:.3f} seconds')
 
     return wrapper
+
+
+def pairwise(iterable):
+    it1, it2 = tee(iter(iterable))
+    next(it2, None)
+    return zip(it1, it2)
 
 
 __all__ = generate__all__(globals(), _do_not_export)

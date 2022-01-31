@@ -23,5 +23,6 @@ sanic
 silly>=1.1.0
 slackblocks
 slackclient
+textual
 uvloop>=0.14.0
 wikipedia

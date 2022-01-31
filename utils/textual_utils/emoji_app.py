@@ -13,8 +13,7 @@ from textual.widgets import Placeholder  # noqa
 import pyperclip
 import logging
 
-from utils.textual_utils.core import TextBox
-
+from utils.textual_utils.core import TextBox, FocusHandler
 
 _emoji = dict(
     sorted((name, e) for name, e in EMOJI.items() if not name.startswith('regional'))
@@ -25,11 +24,16 @@ log = logging.getLogger(__name__)
 
 
 class EmojiBox(App):
-    data: Reactive[str] = Reactive('')
+    """filter/copy emoji easily"""
 
-    async def on_mount(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.tb = TextBox()
         self.er = EmojiResults()
+        self._focus_handler = FocusHandler(self, self.tb, self.er)
+
+    async def on_mount(self):
+        await self.set_focus(self.tb)
 
         def _set_er(v):
             self.er.data = v
@@ -37,17 +41,21 @@ class EmojiBox(App):
         self.tb.register(_set_er)
 
         grid = await self.view.dock_grid(edge='left', name='left')
-        grid.add_row(max_size=self.tb.height, name='g_textbox')
-        grid.add_row(name='g_emoji_results')
-        grid.add_column(name='g_col')
-        grid.add_areas(tb='g_col,g_textbox', er='g_col,g_emoji_results')
-        grid.place(tb=self.tb, er=self.er)
+        grid.add_row(name='r_textbox', max_size=self.tb.height)
+        grid.add_row(name='r_emoji_results')
+        grid.add_column(name='col')
+        grid.add_areas(tb_area='col,r_textbox', er_area='col,r_emoji_results')
+        grid.place(tb_area=self.tb, er_area=self.er)
 
     async def on_key(self, event: events.Key) -> None:
-        await self.er.on_key(event)
+        await self._focus_handler.on_key(event)
+
+        if self.tb.has_focus:
+            await self.er.on_key(event)
 
 
 class EmojiResults(Widget):
+    """filtered panel of emoji"""
     width: Reactive[int | None] = Reactive(None)
     height: Reactive[int | None] = Reactive(40)
     data: Reactive[str] = Reactive('')
@@ -91,9 +99,10 @@ class EmojiResults(Widget):
             self.offset = 0
 
     async def on_click(self, event: events.Click) -> None:
+        """copy emoji to clipboard"""
         info = val = None
         try:
-            idx = event.y + self.offset - 1
+            idx = event.y - 1
             if idx < self.height - 2:
                 # subtract 2 for the borders
                 val = self._emoji[idx].split()[0]

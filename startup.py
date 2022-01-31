@@ -21,7 +21,7 @@ try:
 except ModuleNotFoundError:
     s += '\nunable to import rich'
 else:
-    s += '\n:tada: [yellow on dark_green]rich[/] [red bold]installed :tada:'
+    s += '\n:tada: [green on purple]rich[/] [red bold]installed :tada:'
 
 print()
 print(banner)

@@ -1,4 +1,5 @@
 -r req_rpi.txt
 git+https://github.com/sweettuse/black.git
+pyperclip
 spacy>=2.2.4
 Pillow>=6.2.2
