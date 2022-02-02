@@ -5,21 +5,28 @@ from textual.reactive import Reactive
 
 
 class FocusMixin:
-    has_focus: Reactive[bool] = Reactive(False)
+    _has_focus: Reactive[bool] = Reactive(False)
 
     async def on_focus(self, event: events.Focus) -> None:
-        self.has_focus = True
+        self._has_focus = True
 
     async def on_blur(self, event: events.Blur) -> None:
-        self.has_focus = False
+        self._has_focus = False
+
+    @property
+    def has_focus(self):
+        return self._has_focus
 
 
 class MouseOverMixin:
-    mouse_over: Reactive[bool] = Reactive(False)
+    _mouse_over: Reactive[bool] = Reactive(False)
 
     async def on_enter(self, event: events.Enter) -> None:
-        self.mouse_over = True
+        self._mouse_over = True
 
     async def on_leave(self, event: events.Leave) -> None:
-        self.mouse_over = False
+        self._mouse_over = False
 
+    @property
+    def mouse_over(self):
+        return self._mouse_over

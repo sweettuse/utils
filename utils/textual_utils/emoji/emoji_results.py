@@ -1,63 +1,25 @@
 from __future__ import annotations
+
 from functools import partial
 
+import pyperclip
 from more_itertools import take
-from rich.align import Align
 from rich.emoji import EMOJI
+from rich.align import Align
 from rich.panel import Panel
 from textual import events
-from textual.app import App
 from textual.reactive import Reactive
 from textual.widget import Widget
-from textual.widgets import Placeholder  # noqa
-import pyperclip
-import logging
 
-from utils.textual_utils.core import TextBox, FocusHandler
+from utils.textual_utils.mixins import FocusMixin
 
-_emoji = dict(
-    sorted((name, e) for name, e in EMOJI.items() if not name.startswith('regional'))
-)
-
-identity = lambda x: x
-log = logging.getLogger(__name__)
+_emoji = dict(sorted((name, e) for name, e in EMOJI.items() if not name.startswith('regional')))
 
 
-class EmojiBox(App):
-    """filter/copy emoji easily"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.tb = TextBox()
-        self.er = EmojiResults()
-        self._focus_handler = FocusHandler(self, self.tb, self.er)
-
-    async def on_mount(self):
-        await self.set_focus(self.tb)
-
-        def _set_er(v):
-            self.er.data = v
-
-        self.tb.register(_set_er)
-
-        grid = await self.view.dock_grid(edge='left', name='left')
-        grid.add_row(name='r_textbox', max_size=self.tb.height)
-        grid.add_row(name='r_emoji_results')
-        grid.add_column(name='col')
-        grid.add_areas(tb_area='col,r_textbox', er_area='col,r_emoji_results')
-        grid.place(tb_area=self.tb, er_area=self.er)
-
-    async def on_key(self, event: events.Key) -> None:
-        await self._focus_handler.on_key(event)
-
-        if self.tb.has_focus:
-            await self.er.on_key(event)
-
-
-class EmojiResults(Widget):
+class EmojiResults(Widget, FocusMixin):
     """filtered panel of emoji"""
+
     width: Reactive[int | None] = Reactive(None)
-    height: Reactive[int | None] = Reactive(40)
     data: Reactive[str] = Reactive('')
     style: Reactive[str] = Reactive('')
     offset: Reactive[int] = Reactive(0)
@@ -65,22 +27,33 @@ class EmojiResults(Widget):
     def __init__(self, width=50):
         super().__init__()
         self._emoji = []
-        self.title = 'emoji results'
+        self._title_override = ''
         self.border_style = 'red'
         self.width = width
-        self._orig_title = self.title
         self._orig_border_style = self.border_style
 
         # keeps border updating functions from overlapping
         self._last_copied_cxl_ref = [False]
 
+    @property
+    def _title_str(self):
+        return self._title_override or f'emoji results ({self._num_matching})'
+
+    @property
+    def _num_matching(self):
+        return sum(self.data.lower() in s.lower() for s in _emoji)
+
+    @property
+    def height(self):
+        return self.size.height
+
     def render(self):
         return Panel(
             Align.left(self._emoji_str),
-            title=self.title,
+            title=self._title_str,
             border_style=self.border_style,
             style=self.style,
-            height=self.height,
+            height=min(self.height, len(self._emoji) + 2),
             width=self.width,
         )
 
@@ -121,7 +94,8 @@ class EmojiResults(Widget):
         self.log(f'bleep {val}')
 
     def _alert_copied(self, info, border_style):
-        self.title = info
+        """change border/title to reflect that copying has occurred"""
+        self._title_override = info
         self.border_style = border_style
         self.refresh()
 
@@ -132,13 +106,15 @@ class EmojiResults(Widget):
             if canceled[0]:
                 return
 
-            self.title = self._orig_title
+            self._title_override = ''
             self.border_style = self._orig_border_style
+            self.refresh()
 
         self.set_timer(1, _reset_title)
 
     def down(self):
-        self.offset += 1
+        if len(self._emoji) > 1:
+            self.offset += 1
 
     def up(self):
         self.offset -= 1
@@ -155,6 +131,3 @@ class EmojiResults(Widget):
         emoji = (f'{e} {name}' for name, e in _emoji.items() if s in name.lower())
         take(offset, emoji)
         return limited(emoji)
-
-
-EmojiBox.run(log='/tmp/textuse.txt')

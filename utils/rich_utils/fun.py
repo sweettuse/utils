@@ -1,5 +1,4 @@
-from collections import defaultdict
-from random import choice
+from random import sample
 
 from rich import print
 from rich.console import Console
@@ -30,8 +29,8 @@ def _init_emoji_list():
 _emoji_list = _init_emoji_list()
 
 
-def random_emoji():
-    return choice(_emoji_list)
+def random_emoji(n=1):
+    return ''.join(sample(_emoji_list, n))
 
 
 def _convert_bits(bits, emoji, flip) -> list[str]:
