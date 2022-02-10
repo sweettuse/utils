@@ -4,6 +4,7 @@ from textual.app import App
 from utils.rich_utils import random_emoji
 from utils.textual_utils.core import FocusHandler, TextBox
 from utils.textual_utils.emoji.emoji_results import EmojiResults
+from utils.textual_utils.events import ValueEvent
 
 
 class EmojiApp(App):
@@ -34,7 +35,7 @@ class EmojiApp(App):
         if not self.er.has_focus:
             await self.er.on_key(event)
 
-    async def on_textbox_change(self, event):
+    async def on_textbox_change(self, event: ValueEvent):
         self.tb.title = self._tb_title
         self.er.data = event.value
 

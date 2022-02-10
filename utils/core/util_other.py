@@ -5,6 +5,7 @@ import os
 import pickle
 import smtplib
 from collections import deque, ChainMap
+from functools import partial
 from io import BytesIO
 from itertools import islice
 from tempfile import NamedTemporaryFile
@@ -101,6 +102,17 @@ class json_obj(dict):
     __repr__ = __str__
 
 
+class _default_class:
+    """if descriptor is called from class, create instance on fly"""
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, instance, cls):
+        if not instance:
+            instance = cls()
+        return partial(self.f, instance)
+
+
 class Pickle:
     """make it easy to store data from say a running program
     and retrieve in say a jupyter console
@@ -116,9 +128,11 @@ class Pickle:
         os.makedirs(base_dir, exist_ok=True)
         self._base_dir = base_dir
 
+    @_default_class
     def filename(self, name):
         return f'{self._base_dir}/{name}.pkl'
 
+    @_default_class
     def read(self, *names):
         res = []
         for n in names:
@@ -126,6 +140,7 @@ class Pickle:
                 res.append(pickle.load(f))
         return res[0] if len(res) == 1 else res
 
+    @_default_class
     def write(self, **name_value_pairs):
         for name, val in name_value_pairs.items():
             with open(self.filename(name), 'wb') as f:

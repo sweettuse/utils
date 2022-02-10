@@ -71,6 +71,12 @@ class EmojiResults(Widget, FocusMixin):
         else:
             self.offset = 0
 
+    async def on_mouse_scroll_up(self, event):
+        self.down(3)
+
+    async def on_mouse_scroll_down(self, event):
+        self.up(3)
+
     async def on_click(self, event: events.Click) -> None:
         """copy emoji to clipboard"""
         info = val = None
@@ -112,12 +118,12 @@ class EmojiResults(Widget, FocusMixin):
 
         self.set_timer(1, _reset_title)
 
-    def down(self):
+    def down(self, amount=1):
         if len(self._emoji) > 1:
-            self.offset += 1
+            self.offset += amount
 
-    def up(self):
-        self.offset -= 1
+    def up(self, amount=1):
+        self.offset -= amount
 
     def validate_offset(self, v):
         return max(v, 0)

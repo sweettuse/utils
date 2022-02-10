@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-from typing import Callable
+from string import printable
+from typing import Callable, NamedTuple
 
 from rich import box
 from rich.align import Align
 from rich.panel import Panel
+from rich.table import Table
+from textual import events
 from textual.app import App
-from textual.events import Event
 from textual.reactive import Reactive
 from textual.widget import Widget
-from string import printable
+from textual.widgets import Button
 
 from utils.core import identity, pairwise
+from utils.rich_utils import random_emoji
+from utils.textual_utils.events import ValueEvent
 from utils.textual_utils.mixins import FocusMixin
 
 valid_chars = set(printable)
@@ -108,13 +112,6 @@ class FocusHandler:
 
 # ==================================================================================================
 
-class ValueEvent(Event):
-    """event that has a value"""
-
-    def __init__(self, sender, value):
-        super().__init__(sender)
-        self.value = value
-
 
 class TextBox(Widget, FocusMixin):
     """textbox
@@ -136,9 +133,7 @@ class TextBox(Widget, FocusMixin):
         self.title = title
         self.name = name
         self._height = 3
-        self._text_change_event = type(f'{self.name}_change',
-                                       (ValueEvent,),
-                                       dict(__slots__=['value']))
+        self._text_change_event = ValueEvent.make_new(f'{self.name}_change', bound=type(self))
 
     def render(self):
         return Panel(
@@ -159,10 +154,51 @@ class TextBox(Widget, FocusMixin):
         changed = True
         if k in {'delete', 'ctrl+h'}:
             self.value = self.value[:-1]
+        elif k == 'escape':
+            self.value = ''
         elif k in valid_chars:
             self.value += k
         else:
             changed = False
 
         if changed:
-            await self.post_message(self._text_change_event(self, value=self.value))
+            await self.post_message(self._text_change_event(value=self.value))
+
+
+class CheckStyle(NamedTuple):
+    unchecked: str
+    checked: str
+    width: int = 1
+
+    @classmethod
+    def random(cls):
+        return cls('[ ]', f'[{random_emoji()}]', 3)
+
+
+check_styles = (
+    CheckStyle('🔳', '✅'),
+    CheckStyle('◻', '◼'),
+    CheckStyle('▫', '▪'),
+    CheckStyle('◻', '✖'),
+    CheckStyle('[ ]', '[X]', 3)
+)
+
+
+class CheckBox(Button):
+    checked: Reactive[bool] = Reactive(False)
+
+    def __init__(self, label, name: str = '', check_style: CheckStyle = None):
+        name = name or label
+        super().__init__(label, name or label)
+        self.checked = False
+        self.check_style = check_style or CheckStyle.random()
+        self._event = ValueEvent.make_new(f'{self.name}_change', bound=type(self))
+
+    def render(self):
+        t = Table('check', 'label', show_header=False, border_style=None, box=None)
+        t.add_row(self.check_style[self.checked], self.label)
+        return t
+
+    async def on_click(self, event: events.Click) -> None:
+        self.checked = not self.checked
+        await self.post_message(self._event(self.checked))

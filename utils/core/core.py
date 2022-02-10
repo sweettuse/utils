@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import time
 from collections import deque
+from contextlib import suppress
 from functools import partial, wraps
 from itertools import islice, tee
 from typing import Iterable, Any
 
 from memoize.wrapper import memoize
+from rich.table import Table
 
 _do_not_export = set(globals())
 
@@ -122,25 +124,67 @@ class localtimer:
         self.handler(f'{self.name} took {time.perf_counter() - self.start:.0{self.prec}f} seconds')
 
 
-def timer(func):
+class _TimerObj:
+    def __init__(self, name):
+        self.name = name
+        self.total = 0
+        self.ncalls = 0
+        self.min = float('inf')
+        self.max = -float('inf')
+        self.last = None
+
+    def update(self, time):
+        self.total += time
+        self.ncalls += 1
+        self.last = time
+        self.min = min(self.min, time)
+        self.max = max(self.max, time)
+
+    @property
+    def avg(self):
+        if not self.ncalls:
+            return 0
+        return self.total / self.ncalls
+
+    def __repr__(self):
+        return (f'{self.name!r} took {(self.last):.6f}s, '
+                f'ncalls={self.ncalls} for {self.total:.3f}s (avg: {self.avg:.3f}s)')
+
+    def __rich__(self):
+        from utils.rich_utils import good_color
+        r3 = '{:.3f}'.format
+        t = Table(*'name last avg min max ncalls total'.split(),
+                  border_style=good_color(self.name))
+        t.add_row(self.name,
+                  *map(r3, (self.last, self.avg, self.min, self.max, self.ncalls, self.total)))
+        return t
+
+
+def timer(func, *, pretty=False):
     """timing decorator"""
-    total = 0
-    ncalls = 0
+    local_print = print
+    if pretty:
+        with suppress(Exception):
+            from rich import print as rich_print
+            local_print = rich_print
+
+    to = _TimerObj(func.__name__)
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        nonlocal total, ncalls
-        ncalls += 1
         start = time.perf_counter()
         try:
             return func(*args, **kwargs)
         finally:
             cur = time.perf_counter() - start
-            total += cur
-            print(f'{func.__name__!r} took {(cur):.6f} seconds, '
-                  f'ncalls={ncalls} for {total:.3f} seconds')
+            to.update(cur)
+            local_print(to)
 
     return wrapper
+
+
+def take(n, iterable):
+    return list(islice(iterable, n))
 
 
 def pairwise(iterable):
@@ -150,3 +194,16 @@ def pairwise(iterable):
 
 
 __all__ = generate__all__(globals(), _do_not_export)
+
+if __name__ == '__main__':
+    @timer
+    def f():
+        time.sleep(.002)
+
+
+    @timer
+    def g():
+        time.sleep(.002)
+
+
+    [(f(), g()) for _ in range(20)]
