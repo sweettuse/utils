@@ -8,9 +8,12 @@ from random import shuffle, randint
 from typing import NamedTuple
 
 from rich import box, print
+from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
-from utils.core import timer
+from utils.core import timer, take
 
 
 class Dir(Enum):
@@ -100,6 +103,7 @@ def _to_word_grid(words, g: Grid) -> WordInfo:
             downs.update(word_coords)
 
     res = dict(sorted(res.items(), key=lambda kv: len(kv[1])))
+    # order by connectivity
     return _order_dict_by_word_len_freq(words, res)
 
 
@@ -108,7 +112,6 @@ def wafflify(words, word_starts: WordInfo) -> dict[Coord, str]:
     """generate crossword!
 
     so-named after silas' original idea that kinda looks like a waffle:
-
     [
         [1, 1, 1, 1, 1],
         [1, 0, 1, 0, 1],
@@ -125,7 +128,7 @@ def wafflify(words, word_starts: WordInfo) -> dict[Coord, str]:
         return [(i, v) for i, coord in enumerate(coords)
                 if (v := board.get(coord))]
 
-    def place(remaining, board, seen=frozenset()):
+    def place(remaining: list[WordStart], board: dict[Coord, str], seen=frozenset()):
         if not remaining:
             return board
 
@@ -144,14 +147,15 @@ def wafflify(words, word_starts: WordInfo) -> dict[Coord, str]:
     return place(list(word_starts), {})
 
 
-def _to_table(starting_grid, board, border_style) -> Table:
+def _to_table(starting_grid, board, color) -> Table:
     num_rows = len(starting_grid)
     num_cols = len(starting_grid[0])
     res = [[None] * num_cols for _ in range(num_rows)]
 
     for r, c in product(range(num_rows), range(num_cols)):
-        res[r][c] = ' ' + board.get((r, c), ' ') + ' '
-    table = Table(show_header=False, box=box.HEAVY, border_style=border_style)
+        cell = board.get((r, c), Text(' ', style=f'{color} on {color}', justify='center'))
+        res[r][c] = Text.assemble(' ', cell, ' ')
+    table = Table(show_header=False, box=box.HEAVY, border_style=color, padding=0)
     for row in res:
         table.add_row(*row, end_section=True)
     return table
@@ -166,11 +170,19 @@ def __main():
         [1, 1, 1, 1, 1],
 
     ]
-    words = read_words()
+    words = read_words('qtyp.txt')
     wg = _to_word_grid(words, g)
-    for c in 'red', 'green', 'blue', 'purple':
+    colors = gen_colors()
+    tables = []
+    for c in take(1, colors):
         waffled = wafflify(words, wg)
-        print(_to_table(g, waffled, c))
+        tables.append(_to_table(g, waffled, c))
+        tables.append(31 * '=')
+
+    console = Console(record=True)
+    tables.pop()
+    console.print(*tables)
+    console.save_html('/tmp/xwords.html')
 
 
 def _words_and_freqs():
@@ -182,6 +194,12 @@ def _words_and_freqs():
         if len(words[k]) <= 8:
             print(words[k])
     print(t)
+
+
+def gen_colors():
+    from utils.rich_utils import good_color
+    for idx in count(randint(0, 100000), randint(1, 120)):
+        yield good_color(idx)
 
 
 def playaround():
@@ -196,12 +214,6 @@ def playaround():
     # g = [[1] * 3 for _ in range(3)]
     words = read_words()
     wg = _to_word_grid(words, g)
-
-    def gen_colors():
-        from utils.rich_utils import good_color
-        for idx in count(randint(0, 100000), randint(1, 120)):
-            yield good_color(idx)
-
     colors = gen_colors()
     for _ in range(100):
         waffled = wafflify(words, wg)
@@ -210,7 +222,7 @@ def playaround():
 
 
 if __name__ == '__main__':
-    playaround()
+    __main()
 
     # playaround()
     # __main()

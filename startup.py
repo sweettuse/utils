@@ -15,9 +15,12 @@ else:
 
 banner = len(s) * '='
 try:
-    from rich import print, inspect
+    from rich import print, inspect, box
     help_orig = help
     help = partial(inspect, methods=True, help=True)
+    from rich.table import Table
+    from rich.style import Style
+
 except ModuleNotFoundError:
     s += '\nunable to import rich'
 else:
