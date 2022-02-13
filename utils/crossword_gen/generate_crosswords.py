@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor
 from contextlib import suppress
 from enum import Enum
 from functools import partial
 from itertools import product, count, cycle, repeat
-from random import shuffle, randint, random
-from typing import NamedTuple
+from random import shuffle, randint
+from typing import NamedTuple, Iterable
 
 from rich import box, print
 from rich.console import Console, Group
@@ -16,9 +15,7 @@ from rich.table import Table, Column
 from rich.text import Text
 
 from utils.core import timer, interleave
-import uvloop
-
-uvloop.install()
+from utils.crossword_gen.generate_constraints import ConstraintManager
 
 
 class Dir(Enum):
@@ -48,6 +45,7 @@ class WordStart(NamedTuple):
 
 
 class BoardInfo(NamedTuple):
+    """stores what a finished board looks like as well as the words used"""
     board: Board
     clues: dict[str, dict[int, str]]
 
@@ -176,7 +174,8 @@ def _to_word_info(words, g: Grid) -> WordInfo:
     return _order_dict_by_word_len_freq(words, res)
 
 
-def _gen_xword_helper(words, word_info: WordInfo, abort_after_secs=0.0) -> BoardInfo:
+def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
+                      abort_after_secs=0.0) -> BoardInfo:
     """heavy lifting of actually placing words and creating a BoardInfo
 
     if abort_after_secs is > 0, will only try for that amount of time and then bail
@@ -188,14 +187,6 @@ def _gen_xword_helper(words, word_info: WordInfo, abort_after_secs=0.0) -> Board
         go down the cursed path you accidentally chose with your bad
         random starting word
     """
-    len_to_words = {k: list(v) for k, v in words.items()}
-    for words in len_to_words.values():
-        shuffle(words)
-
-    def _constraints(coords, board):
-        """get constraints based on already-placed letters in the positions we're checking"""
-        return [(i, v) for i, coord in enumerate(coords) if (v := board.get(coord))]
-
     abort_after_secs = max(0.0, abort_after_secs)
     pc = time.perf_counter
     start = pc()
@@ -213,10 +204,9 @@ def _gen_xword_helper(words, word_info: WordInfo, abort_after_secs=0.0) -> Board
 
         word_start, *remaining = remaining
         coords = word_info[word_start]
-        constraints = _constraints(coords, board)
 
         board = board.copy()
-        for w in _matches(len_to_words[len(coords)], constraints, seen):
+        for w in cm.matches(coords, board, seen):
             for coord, char in zip(coords, w):
                 board[coord] = char
             clues[word_start] = w
@@ -228,71 +218,33 @@ def _gen_xword_helper(words, word_info: WordInfo, abort_after_secs=0.0) -> Board
 
 
 @timer
-def generate_crossword(words, word_info: WordInfo, retry_after_secs=0.0) -> BoardInfo:
-    """generate crossword!
-
-    so-named after silas' original idea that kinda looks like a waffle:
-    [
-        [1, 1, 1, 1, 1],
-        [1, 0, 1, 0, 1],
-        [1, 1, 1, 1, 1],
-        [1, 0, 1, 0, 1],
-        [1, 1, 1, 1, 1],
-    ]
-    """
-
+def generate_crossword(cm: ConstraintManager, word_info: WordInfo,
+                       retry_after_secs=0.0) -> BoardInfo:
+    """runs the function that actually generates the crossword"""
     while True:
         with suppress(TimeoutError):
-            return _gen_xword_helper(words, word_info, retry_after_secs)
+            return _gen_xword_helper(cm, word_info, abort_after_secs=retry_after_secs)
 
 
 def _words_and_freqs(words):
     """print a table showing word lengths and number of words of that len"""
-    t = Table('word_len', 'count', border_style='blue')
-
+    t = Table('word_len', 'count', 'running_total', border_style='blue')
+    total = 0
     for k in sorted(words):
-        t.add_row(str(k), str(len(words[k])))
-        if len(words[k]) <= 8:
-            print(words[k])
+        cur = len(words[k])
+        total += cur
+        t.add_row(str(k), str(cur), str(total))
     print(t)
 
 
 def gen_colors():
     from utils.rich_utils import good_color
-
     for idx in count(randint(0, 1000), randint(1, 120)):
         yield good_color(idx)
 
 
 def random_color():
     return next(gen_colors())
-
-
-@timer
-def run_parallel(
-    num_puzzles,
-    g: Grid,
-    *,
-    filename='qtyp.txt',
-    retry_after_secs=1.0,
-    jitter=True,
-    num_cores=12,
-) -> list[BoardInfo]:
-    """generate puzzles in parallel"""
-
-    words = read_words(filename)
-    wg = _to_word_info(words, g)
-    pool = ProcessPoolExecutor(num_cores)
-
-    add_jitter = lambda: 0
-    if jitter:
-        add_jitter = lambda: random() * retry_after_secs
-
-    futures = [
-        pool.submit(generate_crossword, words, wg, retry_after_secs + add_jitter())
-        for _ in range(num_puzzles)
-    ]
-    return [f.result() for f in futures]
 
 
 def _create_waffle_grid(size):
@@ -315,8 +267,14 @@ def _create_waffle_grid(size):
 
 def create_waffles(num_puzzles, size, filename, out_filename='/tmp/xwords.html'):
     g = _create_waffle_grid(size)
-    bis = run_parallel(num_puzzles, g, filename=filename, retry_after_secs=1.0)
+    cm = ConstraintManager(filename)
+    wi = _to_word_info(cm.len_to_words_dict, g)
 
+    bis = (generate_crossword(cm, wi, retry_after_secs=2) for _ in range(num_puzzles))
+    _to_html(g, bis, out_filename)
+
+
+def _to_html(g: Grid, bis: Iterable[BoardInfo], out_filename):
     tables = []
     for c, bi in zip(gen_colors(), bis):
         tables.append(bi.as_table(g, c))
@@ -327,20 +285,25 @@ def create_waffles(num_puzzles, size, filename, out_filename='/tmp/xwords.html')
     console.save_html(out_filename)
 
 
+@timer
 def __main():
-    return create_waffles(100, 7, 'silas_7.txt', 'silas_7_xwords_better_num.html')
+    return create_waffles(100, 5, 'qtyp.txt', '5_new.html')
 
 
 def _run_one():
     g = _create_waffle_grid(9)
-    words = read_words('qtyp.txt')
-    bi = generate_crossword(words, _to_word_info(words, g), retry_after_secs=3)
+    cm = ConstraintManager('qtyp.txt')
+    bi = generate_crossword(cm, _to_word_info(cm.len_to_words_dict, g))
     print(bi.as_table(g))
 
 
-if __name__ == '__main__':
-    _run_one()
-    # __main()
+def generate_constraints(filename):
+    cm = ConstraintManager(filename)
+    cm.generate_constraints()
 
-    # playaround()
-    # __main()
+
+if __name__ == '__main__':
+    # generate_constraints('silas_7.txt')
+    # _words_and_freqs(read_words('qtyp.txt'))
+    # _run_one()
+    __main()
