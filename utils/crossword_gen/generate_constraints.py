@@ -1,16 +1,12 @@
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
-from contextlib import suppress
 from datetime import datetime
+from functools import cache
+from itertools import combinations
 from random import shuffle
-
-from dataclasses import dataclass
-from functools import cache, partial
-from operator import itemgetter
+from typing import NamedTuple
 
 from rich import print
-from itertools import combinations, chain
-from typing import NamedTuple
 
 from utils.core import timer, Pickle, localtimer, first
 
@@ -27,7 +23,7 @@ class ConstraintInfo(NamedTuple):
 
     @classmethod
     def from_coords_and_board(cls, coords, board):
-        idxs, chars = zip(*((i, v) for i, coord in enumerate(coords) if (v := board.get(coord))))
+        idxs, chars = zip(*[(i, v) for i, coord in enumerate(coords) if (v := board.get(coord))])
         return cls(idxs, ''.join(chars))
 
 
@@ -42,6 +38,15 @@ def get_constraint_powerset(w) -> list[ConstraintInfo]:
     return [ConstraintInfo(t, _word_at(w, t)) for t in powerset_idxs(len(w))]
 
 
+def read_words(filename='qtyp.txt') -> dict[int, set[str]]:
+    res = defaultdict(set)
+    with open(filename) as f:
+        for l in f:
+            l = l.strip().lower()
+            res[len(l)].add(l)
+    return res
+
+
 class ConstraintManager:
     filename: str
     num_cores: int = 4
@@ -54,7 +59,6 @@ class ConstraintManager:
 
         self.filename = filename
         self.num_cores = num_cores
-        from utils.crossword_gen.generate_crosswords import read_words
         self.len_to_words_dict = read_words(self.filename)
         self._cache[filename] = self.__dict__
 
@@ -104,10 +108,10 @@ class ConstraintManager:
 
     def matches(self, coords, board, seen):
         """get constraints based on already-placed letters in the positions we're checking"""
-        try:
+        if board:
             ci = ConstraintInfo.from_coords_and_board(coords, board)
-            res = self._get_pickle(len(coords)).get(ci, set())
-        except ValueError:
+            res = self._get_pickle(len(coords))[ci]
+        else:
             res = self.len_to_words_dict[len(coords)]
 
         res = list(res - seen)
@@ -115,35 +119,5 @@ class ConstraintManager:
         return res
 
 
-def do_the_thing():
-    board = {
-        (0, 1): 'a',
-        (0, 3): 'm',
-    }
-    # board = {}
-    coords = [(0, i) for i in range(4)]
-    cm = ConstraintManager('qtyp.txt')
-    print(cm.matches(coords, board, set()))
-
-    # cm.create_constraints()
-    # words = read_words('qtyp.txt')
-    # words = dict(sorted(words.items(), reverse=True))
-    # words = {l: words for l, words in words.items() if l in {4, 5}}
-    #
-    # constraints = create_constraint_dict(words)
-    # # constraints = create_constraint_dict(words[7])
-    # with localtimer():
-    #     Pickle.write(constraints=constraints)
-
-
 if __name__ == '__main__':
-    # _test_creation()
-    do_the_thing()
-    # words = read_words('silas_7.txt')
-    # # print(list(chain.from_iterable(words.values())))
-    # constraints = create_constraint_dict(chain.from_iterable(words.values()))
-    #
-    # # Pickle.write(constraints=constraints)
-    # # print(list(words))
-    # print(powerset_idxs(3))
-    # print(get_constraint_powerset('jeb'))
+    pass

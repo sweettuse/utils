@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import suppress
 from enum import Enum
 from functools import partial
-from itertools import product, count, cycle, repeat
-from random import shuffle, randint
+from itertools import product, count, cycle
+from random import randint
 from typing import NamedTuple, Iterable
 
 from rich import box, print
@@ -14,8 +15,10 @@ from rich.console import Console, Group
 from rich.table import Table, Column
 from rich.text import Text
 
-from utils.core import timer, interleave
+from utils.core import timer, chunk
 from utils.crossword_gen.generate_constraints import ConstraintManager
+
+console = Console(record=True)
 
 
 class Dir(Enum):
@@ -51,7 +54,7 @@ class BoardInfo(NamedTuple):
 
     @classmethod
     def from_board_clues(cls, board: Board, clues: dict[WordStart, str]):
-        res = defaultdict(dict)
+        res: dict[str, dict[int, w]] = defaultdict(dict)
         for ws, w in clues.items():
             res[ws.dir.value][ws.clue_num] = w
         return cls(board, {dir: dict(sorted(v.items())) for dir, v in res.items()})
@@ -99,23 +102,6 @@ Coord = tuple[int, int]  # row, col
 Grid = list[list[int]]
 WordInfo = dict[WordStart, list[Coord]]
 Board = dict[Coord, str]
-
-
-def read_words(filename='qtyp.txt') -> dict[int, set[str]]:
-    res = defaultdict(set)
-    with open(filename) as f:
-        for l in f:
-            l = l.strip().lower()
-            res[len(l)].add(l)
-    return res
-
-
-def _matches(words, constraints, seen=frozenset()):
-    return (
-        w
-        for w in words
-        if w not in seen and all(w[offset] == char for offset, char in constraints)
-    )
 
 
 def _order_dict_by_word_len_freq(words, word_info: WordInfo):
@@ -209,8 +195,8 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
         for w in cm.matches(coords, board, seen):
             for coord, char in zip(coords, w):
                 board[coord] = char
-            clues[word_start] = w
             if res := place(remaining, board, seen | {w}):
+                clues[word_start] = w
                 return res
         return False
 
@@ -265,7 +251,16 @@ def _create_waffle_grid(size):
     return [r for r, _ in zip(cycle((row1, row2)), range(size))]
 
 
+def run_parallel(g: Grid, cm: ConstraintManager, num_puzzles, retry_after_secs=0):
+    pool = ProcessPoolExecutor(8)
+    wi = _to_word_info(cm.len_to_words_dict, g)
+    futures = [pool.submit(generate_crossword, cm, wi, retry_after_secs)
+               for _ in range(num_puzzles)]
+    return (f.result() for f in as_completed(futures))
+
+
 def create_waffles(num_puzzles, size, filename, out_filename='/tmp/xwords.html'):
+    """create waffles sequentially"""
     g = _create_waffle_grid(size)
     cm = ConstraintManager(filename)
     wi = _to_word_info(cm.len_to_words_dict, g)
@@ -274,26 +269,29 @@ def create_waffles(num_puzzles, size, filename, out_filename='/tmp/xwords.html')
     _to_html(g, bis, out_filename)
 
 
-def _to_html(g: Grid, bis: Iterable[BoardInfo], out_filename):
+def create_waffles_parallel(num_puzzles, size, filename, out_filename='/tmp/xwords.html',
+                            chunk_size=8):
+    """create waffles in parallel"""
+    g = _create_waffle_grid(size)
+    cm = ConstraintManager(filename)
+    for bis in chunk(run_parallel(g, cm, num_puzzles, retry_after_secs=30), chunk_size):
+        _to_html(g, bis, out_filename, clear_html_buffer=False)
+
+
+def _to_html(g: Grid, bis: Iterable[BoardInfo], out_filename, *, clear_html_buffer=True):
     tables = []
     for c, bi in zip(gen_colors(), bis):
         tables.append(bi.as_table(g, c))
 
-    console = Console(record=True)
-    *res, _ = interleave(tables, repeat(31 * '=', len(tables)))
-    console.print(*res)
-    console.save_html(out_filename)
-
-
-@timer
-def __main():
-    return create_waffles(100, 5, 'qtyp.txt', '5_new.html')
+    console.print(*tables)
+    console.save_html(out_filename, clear=clear_html_buffer)
 
 
 def _run_one():
     g = _create_waffle_grid(9)
     cm = ConstraintManager('qtyp.txt')
-    bi = generate_crossword(cm, _to_word_info(cm.len_to_words_dict, g))
+    wi = _to_word_info(cm.len_to_words_dict, g)
+    bi = generate_crossword(cm, wi)
     print(bi.as_table(g))
 
 
@@ -302,8 +300,16 @@ def generate_constraints(filename):
     cm.generate_constraints()
 
 
+def gen_nines():
+    return create_waffles_parallel(16, 9, 'qtyp.txt', out_filename='the_nines.html', chunk_size=1)
+
+
+@timer
+def __main():
+    return _run_one()
+    # return generate_constraints('silas_7.txt')
+    return create_waffles_parallel(100, 7, 'silas_7.txt', out_filename='/tmp/silas_100_7.html')
+
+
 if __name__ == '__main__':
-    # generate_constraints('silas_7.txt')
-    # _words_and_freqs(read_words('qtyp.txt'))
-    # _run_one()
     __main()

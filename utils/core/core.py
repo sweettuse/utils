@@ -160,8 +160,11 @@ class _TimerObj:
         return t
 
 
-def timer(func, *, pretty=False):
+def timer(func=None, *, pretty=False):
     """timing decorator"""
+    if not func:
+        return partial(timer, pretty=pretty)
+
     local_print = print
     if pretty:
         with suppress(Exception):
