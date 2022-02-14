@@ -1,107 +1,22 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import suppress
-from enum import Enum
-from functools import partial
-from itertools import product, count, cycle
-from random import randint
-from typing import NamedTuple, Iterable
+from itertools import product, cycle
+from random import shuffle
+from typing import Iterable
 
-from rich import box, print
-from rich.console import Console, Group
-from rich.table import Table, Column
-from rich.text import Text
+from rich import print
+from rich.console import Console
+from rich.table import Table
 
 from utils.core import timer, chunk
+from utils.crossword_gen.core import WordStart, BoardInfo, Grid, WordInfo, Board, gen_colors
 from utils.crossword_gen.generate_constraints import ConstraintManager
+from utils.crossword_gen.gif_recorder import GifRecorder
 
 console = Console(record=True)
-
-
-class Dir(Enum):
-    down = 'down'
-    right = 'across'
-
-
-class WordStart(NamedTuple):
-    rc: Coord
-    dir: Dir
-    clue_num: int
-    _right_count = count(1)
-    _down_count = count(1)
-
-    @classmethod
-    def init(cls):
-        cls._right_count = count(1)
-        cls._down_count = count(1)
-
-    @classmethod
-    def new_right(cls, r, c):
-        return cls((r, c), Dir.right, next(cls._right_count))
-
-    @classmethod
-    def new_down(cls, r, c):
-        return cls((r, c), Dir.down, next(cls._down_count))
-
-
-class BoardInfo(NamedTuple):
-    """stores what a finished board looks like as well as the words used"""
-    board: Board
-    clues: dict[str, dict[int, str]]
-
-    @classmethod
-    def from_board_clues(cls, board: Board, clues: dict[WordStart, str]):
-        res: dict[str, dict[int, w]] = defaultdict(dict)
-        for ws, w in clues.items():
-            res[ws.dir.value][ws.clue_num] = w
-        return cls(board, {dir: dict(sorted(v.items())) for dir, v in res.items()})
-
-    def board_to_table(self, starting_grid: Grid, color=None) -> Table:
-        color = color or random_color()
-        num_rows = len(starting_grid)
-        num_cols = len(starting_grid[0])
-        res = [[None] * num_cols for _ in range(num_rows)]
-
-        for r, c in product(range(num_rows), range(num_cols)):
-            cell = self.board.get(
-                (r, c), Text(' ', style=f'{color} on {color}', justify='center')
-            )
-            res[r][c] = Text.assemble(' ', cell, ' ')
-        table = Table(show_header=False, box=box.HEAVY, border_style=color, padding=0)
-        for row in res:
-            table.add_row(*row, end_section=True)
-        return table
-
-    def clues_to_table(self, color=None) -> Table:
-        tables = []
-        Col = partial(Column, justify='center')
-        res = Table(
-            *map(Col, self.clues), border_style=color or random_color(), box=box.MINIMAL
-        )
-        for d, num_word in self.clues.items():
-            tables.append(Table(show_header=False, box=box.SIMPLE))
-            t = tables[-1]
-            for n, w in num_word.items():
-                t.add_row(str(n), w)
-
-        res.add_row(*tables)
-        return res
-
-    def as_table(self, starting_grid: Grid, color=None):
-        color = color or random_color()
-        return Group(
-            self.board_to_table(starting_grid, color),
-            self.clues_to_table(color),
-        )
-
-
-Coord = tuple[int, int]  # row, col
-Grid = list[list[int]]
-WordInfo = dict[WordStart, list[Coord]]
-Board = dict[Coord, str]
 
 
 def _order_dict_by_word_len_freq(words, word_info: WordInfo):
@@ -161,7 +76,8 @@ def _to_word_info(words, g: Grid) -> WordInfo:
 
 
 def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
-                      abort_after_secs=0.0) -> BoardInfo:
+                      abort_after_secs=0.0,
+                      gif_recorder: GifRecorder = None) -> BoardInfo:
     """heavy lifting of actually placing words and creating a BoardInfo
 
     if abort_after_secs is > 0, will only try for that amount of time and then bail
@@ -169,7 +85,7 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
         that if you start with a really shitty word, it can take an
         incredibly long time to resolve.
         whereas if you start with a good word, it can be really quick
-        better to bail if it's taking to long, re-shuffle, and try again then to
+        better to bail if it's taking to long, re-shuffle, and try again than to
         go down the cursed path you accidentally chose with your bad
         random starting word
     """
@@ -178,7 +94,19 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
     start = pc()
     clues = {}
 
-    def place(remaining: list[WordStart], board: Board, seen=frozenset()):
+    def _get_next_word_start(
+            remaining: list[WordStart],
+            board: Board,
+    ) -> tuple[WordStart, list[WordStart]]:
+        shuffle(remaining)
+        word_start, *remaining = remaining
+        return word_start, remaining
+
+    def place(
+            remaining: list[WordStart],
+            board: Board,
+            seen=frozenset(),
+    ):
         """actually attempt to place words on the board.
 
         recursive backtracking algorithm"""
@@ -188,28 +116,35 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
         if abort_after_secs and (pc() - start) > abort_after_secs:
             raise TimeoutError
 
-        word_start, *remaining = remaining
+        word_start, remaining = _get_next_word_start(remaining, board)
         coords = word_info[word_start]
 
         board = board.copy()
         for w in cm.matches(coords, board, seen):
             for coord, char in zip(coords, w):
                 board[coord] = char
+            if gif_recorder:
+                gif_recorder.record(board)
             if res := place(remaining, board, seen | {w}):
                 clues[word_start] = w
                 return res
         return False
 
-    return BoardInfo.from_board_clues(place(list(word_info), {}), clues)
+    board = place(list(word_info), {})
+    return BoardInfo.from_board_clues(board, clues)
 
 
 @timer
 def generate_crossword(cm: ConstraintManager, word_info: WordInfo,
-                       retry_after_secs=0.0) -> BoardInfo:
+                       retry_after_secs=0.0,
+                       gif_recorder: GifRecorder = None) -> BoardInfo:
     """runs the function that actually generates the crossword"""
     while True:
         with suppress(TimeoutError):
-            return _gen_xword_helper(cm, word_info, abort_after_secs=retry_after_secs)
+            return _gen_xword_helper(cm,
+                                     word_info,
+                                     abort_after_secs=retry_after_secs,
+                                     gif_recorder=gif_recorder)
 
 
 def _words_and_freqs(words):
@@ -221,16 +156,6 @@ def _words_and_freqs(words):
         total += cur
         t.add_row(str(k), str(cur), str(total))
     print(t)
-
-
-def gen_colors():
-    from utils.rich_utils import good_color
-    for idx in count(randint(0, 1000), randint(1, 120)):
-        yield good_color(idx)
-
-
-def random_color():
-    return next(gen_colors())
 
 
 def _create_waffle_grid(size):
@@ -279,35 +204,41 @@ def create_waffles_parallel(num_puzzles, size, filename, out_filename='/tmp/xwor
 
 
 def _to_html(g: Grid, bis: Iterable[BoardInfo], out_filename, *, clear_html_buffer=True):
-    tables = []
-    for c, bi in zip(gen_colors(), bis):
-        tables.append(bi.as_table(g, c))
-
+    tables = (bi.as_table(g, c)
+              for c, bi in zip(gen_colors(), bis))
     console.print(*tables)
     console.save_html(out_filename, clear=clear_html_buffer)
 
 
 def _run_one():
-    g = _create_waffle_grid(9)
+    g = _create_waffle_grid(5)
     cm = ConstraintManager('qtyp.txt')
     wi = _to_word_info(cm.len_to_words_dict, g)
-    bi = generate_crossword(cm, wi)
+    gif_recorder = GifRecorder(g)
+    bi = generate_crossword(cm, wi, gif_recorder=gif_recorder)
     print(bi.as_table(g))
+    gif_recorder.to_gif()
 
 
 def generate_constraints(filename):
     cm = ConstraintManager(filename)
-    cm.generate_constraints()
+    cm.generate_constraints(lambda word_len: word_len == 11)
 
 
 def gen_nines():
     return create_waffles_parallel(16, 9, 'qtyp.txt', out_filename='the_nines.html', chunk_size=1)
 
 
+def gen_elevens():
+    return create_waffles_parallel(4, 11, 'qtyp.txt', out_filename='the_elevens.html', chunk_size=1)
+
+
 @timer
 def __main():
     return _run_one()
-    # return generate_constraints('silas_7.txt')
+
+    return gen_elevens()
+    return generate_constraints('qtyp.txt')
     return create_waffles_parallel(100, 7, 'silas_7.txt', out_filename='/tmp/silas_100_7.html')
 
 

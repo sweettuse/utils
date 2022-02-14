@@ -97,7 +97,7 @@ def sample_emoji_text(text,
 
 def __main():
     print(random_emoji())
-    print(*emoji_text('jygify', flip=False, size=20, font=Fonts.comic_sans))
+    print(*emoji_text('jygify', flip=False, size=13, font=Fonts.comic_sans))
 
 
 if __name__ == '__main__':

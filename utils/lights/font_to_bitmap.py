@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+from __future__ import annotations
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Needs freetype-py>=1.0
 
@@ -301,7 +302,7 @@ class Fonts(Enum):
     papyrus = 'Papyrus.ttc'
 
 
-def load_font(font_name='Courier New.ttf', size=13):
+def load_font(font_name: str | Fonts = 'Courier New.ttf', size=13):
     if isinstance(font_name, Fonts):
         font_name = font_name.value
     font_dir = ASSETS_PATH / 'fonts'
@@ -339,7 +340,8 @@ def _play():
     from lifxlan3.routines.tile.core import set_cm, translate, Dir
     fnt.to_image('hello').show()
     return
-    translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3, pixels_per_step=4)
+    translate(cm, in_terminal=True, n_iterations=2, split=False, dir=Dir.left, sleep_secs=.3,
+              pixels_per_step=4)
     # set_cm(cm, size=RC(8, 256), in_terminal=True, verbose=False)
     return
     # Multiple characters

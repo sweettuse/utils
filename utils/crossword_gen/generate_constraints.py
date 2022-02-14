@@ -4,7 +4,7 @@ from datetime import datetime
 from functools import cache
 from itertools import combinations
 from random import shuffle
-from typing import NamedTuple
+from typing import NamedTuple, Callable
 
 from rich import print
 
@@ -63,10 +63,10 @@ class ConstraintManager:
         self._cache[filename] = self.__dict__
 
     @timer
-    def generate_constraints(self, max_len=9):
+    def generate_constraints(self, pred: Callable[[int], bool] = lambda word_len: word_len <= 9):
         """EXPENSIVE!"""
         pool = ProcessPoolExecutor(self.num_cores)
-        words = {l: words for l, words in self.len_to_words_dict.items() if l <= max_len}
+        words = {l: words for l, words in self.len_to_words_dict.items() if pred(l)}
         res = {l: pool.submit(self._create_constraints_per_len, words,
                               self._gen_pickle_name(len(first(words))))
                for l, words in words.items()}
@@ -100,7 +100,8 @@ class ConstraintManager:
         return self.filename == other.filename
 
     @cache
-    def _get_pickle(self, word_len):
+    @timer
+    def _get_pickle(self, word_len) -> dict[ConstraintInfo, set[str]]:
         print('reading len', word_len)
         res = Pickle.read(self._gen_pickle_name(word_len))
         print('reading complete')
