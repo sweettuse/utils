@@ -23,7 +23,15 @@ class ConstraintInfo(NamedTuple):
 
     @classmethod
     def from_coords_and_board(cls, coords, board):
-        idxs, chars = zip(*[(i, v) for i, coord in enumerate(coords) if (v := board.get(coord))])
+        if not board:
+            return
+        if not (t := [(i, v)
+                      for i, coord in enumerate(coords)
+                      if (v := board.get(coord))]
+        ):
+            return
+
+        idxs, chars = zip(*t)
         return cls(idxs, ''.join(chars))
 
 
@@ -107,16 +115,17 @@ class ConstraintManager:
         print('reading complete')
         return res
 
-    def matches(self, coords, board, seen):
+    def matches(self, coords, board, seen, *, do_shuffle=True):
         """get constraints based on already-placed letters in the positions we're checking"""
-        if board:
-            ci = ConstraintInfo.from_coords_and_board(coords, board)
+        if ci := ConstraintInfo.from_coords_and_board(coords, board):
             res = self._get_pickle(len(coords))[ci]
         else:
             res = self.len_to_words_dict[len(coords)]
 
-        res = list(res - seen)
-        shuffle(res)
+        res = res - seen
+        if do_shuffle:
+            res = list(res)
+            shuffle(res)
         return res
 
 

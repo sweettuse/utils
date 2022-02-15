@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import suppress
-from itertools import product, cycle
+from itertools import product, cycle, count
 from random import shuffle
 from typing import Iterable
 
@@ -94,19 +94,15 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
     start = pc()
     clues = {}
 
-    def _get_next_word_start(
-            remaining: list[WordStart],
-            board: Board,
-    ) -> tuple[WordStart, list[WordStart]]:
-        shuffle(remaining)
-        word_start, *remaining = remaining
-        return word_start, remaining
+    def _check_board_still_valid(remaining: list[WordStart],
+                                 board: Board,
+                                 seen):
+        for ws in remaining:
+            if not cm.matches(word_info[ws], board, seen, do_shuffle=False):
+                return False
+        return True
 
-    def place(
-            remaining: list[WordStart],
-            board: Board,
-            seen=frozenset(),
-    ):
+    def place(remaining: list[WordStart], board: Board, seen=frozenset()):
         """actually attempt to place words on the board.
 
         recursive backtracking algorithm"""
@@ -116,7 +112,11 @@ def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
         if abort_after_secs and (pc() - start) > abort_after_secs:
             raise TimeoutError
 
-        word_start, remaining = _get_next_word_start(remaining, board)
+        if board and not _check_board_still_valid(remaining, board, seen):
+            return False
+
+        shuffle(remaining)
+        word_start, *remaining = remaining
         coords = word_info[word_start]
 
         board = board.copy()
@@ -139,11 +139,9 @@ def generate_crossword(cm: ConstraintManager, word_info: WordInfo,
                        retry_after_secs=0.0,
                        gif_recorder: GifRecorder = None) -> BoardInfo:
     """runs the function that actually generates the crossword"""
-    while True:
+    for i in count():
         with suppress(TimeoutError):
-            return _gen_xword_helper(cm,
-                                     word_info,
-                                     abort_after_secs=retry_after_secs,
+            return _gen_xword_helper(cm, word_info, abort_after_secs=retry_after_secs,
                                      gif_recorder=gif_recorder)
 
 
@@ -210,14 +208,17 @@ def _to_html(g: Grid, bis: Iterable[BoardInfo], out_filename, *, clear_html_buff
     console.save_html(out_filename, clear=clear_html_buffer)
 
 
-def _run_one():
-    g = _create_waffle_grid(5)
+def _run_one(*, size_or_grid: int | Grid = 5, to_gif=False, retry_after_secs=0.0):
+    g = size_or_grid
+    if isinstance(size_or_grid, int):
+        g = _create_waffle_grid(size_or_grid)
     cm = ConstraintManager('qtyp.txt')
     wi = _to_word_info(cm.len_to_words_dict, g)
-    gif_recorder = GifRecorder(g)
-    bi = generate_crossword(cm, wi, gif_recorder=gif_recorder)
+    gif_recorder = GifRecorder(g) if to_gif else None
+    bi = generate_crossword(cm, wi, gif_recorder=gif_recorder, retry_after_secs=retry_after_secs)
     print(bi.as_table(g))
-    gif_recorder.to_gif()
+    if to_gif:
+        gif_recorder.to_gif()
 
 
 def generate_constraints(filename):
@@ -235,7 +236,15 @@ def gen_elevens():
 
 @timer
 def __main():
-    return _run_one()
+    square = 6
+    g = [[1] * square for _ in range(square)]
+    # return _run_one(size_or_grid=g, to_gif=True, retry_after_secs=.1)
+    for _ in range(3):
+        _run_one(size_or_grid=11, to_gif=False, retry_after_secs=.15)
+    return
+    for _ in range(10):
+        _run_one(size_or_grid=9, to_gif=False, retry_after_secs=.1)
+    return
 
     return gen_elevens()
     return generate_constraints('qtyp.txt')

@@ -85,7 +85,7 @@ def from_tmp(gr_id: int):
 
 
 def __main():
-    return from_tmp(86287)
+    return from_tmp(19587)
     g = [
         [1, 1, 1],
         [1, 0, 1],
