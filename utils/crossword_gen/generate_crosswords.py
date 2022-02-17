@@ -25,7 +25,7 @@ def _order_dict_by_word_len_freq(words, word_info: WordInfo):
     return dict(sorted(word_info.items(), key=lambda kv: freqs.index(len(kv[1]))))
 
 
-def _to_word_info(words, g: Grid) -> WordInfo:
+def _to_word_info(g: Grid) -> WordInfo:
     """create a dict of WordStarts to the coords that word encompasses
 
     g looks something like:
@@ -36,7 +36,7 @@ def _to_word_info(words, g: Grid) -> WordInfo:
     ]
     where 1 means you can place a letter and 0 means you can't
 
-    figures out where words can start looking right and down
+    figures out where words can start from left to right, top to bottom
     """
     rights, downs = set(), set()
     num_rows, num_cols = len(g), len(g[0])
@@ -71,8 +71,7 @@ def _to_word_info(words, g: Grid) -> WordInfo:
             downs.update(word_coords)
 
     res = dict(sorted(res.items(), key=lambda kv: len(kv[1])))
-    # order by freq - maybe a good idea?
-    return _order_dict_by_word_len_freq(words, res)
+    return res
 
 
 def _gen_xword_helper(cm: ConstraintManager, word_info: WordInfo,
@@ -176,7 +175,7 @@ def _create_waffle_grid(size):
 
 def run_parallel(g: Grid, cm: ConstraintManager, num_puzzles, retry_after_secs=0):
     pool = ProcessPoolExecutor(8)
-    wi = _to_word_info(cm.len_to_words_dict, g)
+    wi = _to_word_info(g)
     futures = [pool.submit(generate_crossword, cm, wi, retry_after_secs)
                for _ in range(num_puzzles)]
     return (f.result() for f in as_completed(futures))
@@ -186,7 +185,7 @@ def create_waffles(num_puzzles, size, filename, out_filename='/tmp/xwords.html')
     """create waffles sequentially"""
     g = _create_waffle_grid(size)
     cm = ConstraintManager(filename)
-    wi = _to_word_info(cm.len_to_words_dict, g)
+    wi = _to_word_info(g)
 
     bis = (generate_crossword(cm, wi, retry_after_secs=2) for _ in range(num_puzzles))
     _to_html(g, bis, out_filename)
@@ -212,18 +211,19 @@ def _run_one(*, size_or_grid: int | Grid = 5, to_gif=False, retry_after_secs=0.0
     g = size_or_grid
     if isinstance(size_or_grid, int):
         g = _create_waffle_grid(size_or_grid)
-    cm = ConstraintManager('qtyp.txt')
-    wi = _to_word_info(cm.len_to_words_dict, g)
+    cm = ConstraintManager('words_in_order.txt')
+    wi = _to_word_info(g)
     gif_recorder = GifRecorder(g) if to_gif else None
     bi = generate_crossword(cm, wi, gif_recorder=gif_recorder, retry_after_secs=retry_after_secs)
     print(bi.as_table(g))
     if to_gif:
         gif_recorder.to_gif()
+    return bi
 
 
-def generate_constraints(filename):
-    cm = ConstraintManager(filename)
-    cm.generate_constraints(lambda word_len: word_len == 11)
+def generate_constraints(filename, num_words=float('inf')):
+    cm = ConstraintManager(filename, num_words=num_words)
+    cm.generate_constraints(lambda word_len: word_len <= 11)
 
 
 def gen_nines():
@@ -236,6 +236,29 @@ def gen_elevens():
 
 @timer
 def __main():
+    # _run_one(size_or_grid=7)
+    # return generate_constraints('words_in_order.txt', 40000)
+    bis = [_run_one(size_or_grid=7, retry_after_secs=.1) for _ in range(12)]
+    _to_html(_create_waffle_grid(7), bis, '/tmp/matt.html')
+
+    # return
+    g = [
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 0, 1],
+        [1, 1, 1, 1, 0, 1],
+        [1, 1, 0, 1, 0, 1],
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 0, 1, 1],
+    ]
+    g = [
+        [1] * 6,
+        [1] * 6,
+        [1] * 6,
+        [1] * 6,
+        [1] * 6,
+    ]
+    _run_one(size_or_grid=g, retry_after_secs=.1)
+    return
     square = 6
     g = [[1] * square for _ in range(square)]
     # return _run_one(size_or_grid=g, to_gif=True, retry_after_secs=.1)

@@ -8,7 +8,9 @@ from typing import NamedTuple, Callable
 
 from rich import print
 
-from utils.core import timer, Pickle, localtimer, first
+from utils.core import timer, Pickle, localtimer, first, exhaust
+
+MAX_NUM_WORDS = float('inf')
 
 
 @cache
@@ -46,12 +48,14 @@ def get_constraint_powerset(w) -> list[ConstraintInfo]:
     return [ConstraintInfo(t, _word_at(w, t)) for t in powerset_idxs(len(w))]
 
 
-def read_words(filename='qtyp.txt') -> dict[int, set[str]]:
+def read_words(filename='qtyp.txt', num_words=MAX_NUM_WORDS) -> dict[int, set[str]]:
     res = defaultdict(set)
     with open(filename) as f:
-        for l in f:
+        for i, l in enumerate(f):
             l = l.strip().lower()
             res[len(l)].add(l)
+            if i > num_words:
+                break
     return res
 
 
@@ -60,14 +64,14 @@ class ConstraintManager:
     num_cores: int = 4
     _cache = {}
 
-    def __init__(self, filename: str, num_cores: int = 4):
+    def __init__(self, filename: str, num_cores: int = 4, num_words=MAX_NUM_WORDS):
         if filename in self._cache:
             self.__dict__ = self._cache[filename]
             return
 
         self.filename = filename
         self.num_cores = num_cores
-        self.len_to_words_dict = read_words(self.filename)
+        self.len_to_words_dict = read_words(self.filename, num_words)
         self._cache[filename] = self.__dict__
 
     @timer
@@ -130,4 +134,6 @@ class ConstraintManager:
 
 
 if __name__ == '__main__':
+    exhaust(print, get_constraint_powerset('dog'))
+
     pass
