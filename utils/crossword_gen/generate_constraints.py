@@ -19,6 +19,18 @@ def powerset_idxs(n):
             for c in combinations(range(n), i)]
 
 
+def f():
+    word = 'flyer'
+    constraint_info_to_word = {
+        ((0,), 'f'): 'flyer',
+        ((0, 1), 'fl'): 'flyer',
+        ((0, 1, 2), 'fly'): 'flyer',
+
+    }
+
+
+
+
 class ConstraintInfo(NamedTuple):
     idxs: tuple[int, ...]
     chars: str
@@ -134,6 +146,13 @@ class ConstraintManager:
 
 
 if __name__ == '__main__':
-    exhaust(print, get_constraint_powerset('dog'))
-
-    pass
+    exhaust(print, get_constraint_powerset('dig'))
+    # cm = ConstraintManager('qtyp.txt')
+    # ci = ConstraintInfo((2, 3, 4), 'ake')
+    # matches = cm._get_pickle(5)[ci]
+    # exclude = set('wropdflcbvm')
+    # for m in matches:
+    #     if not any(c in m for c in exclude):
+    #         print(m)
+    #
+    # pass

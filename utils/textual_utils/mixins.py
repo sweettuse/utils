@@ -8,9 +8,11 @@ class FocusMixin:
     _has_focus: Reactive[bool] = Reactive(False)
 
     async def on_focus(self, event: events.Focus) -> None:
+        self.log('>>>>>> HAS FOCUS NOW')
         self._has_focus = True
 
     async def on_blur(self, event: events.Blur) -> None:
+        self.log('>>>>>> BLURRED NOW')
         self._has_focus = False
 
     @property

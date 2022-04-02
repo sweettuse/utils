@@ -16,7 +16,7 @@ from textual.widget import Widget
 from textual.widgets import Button
 
 from utils.lights.font_to_bitmap import load_font, Fonts
-from utils.textual_utils.mixins import MouseOverMixin
+from utils.textual_utils.mixins import MouseOverMixin, FocusMixin
 
 font = load_font(Fonts.courier_new, 12)
 
@@ -38,7 +38,7 @@ class Clickable(Widget):
         self.title = name
         self._button = ResetButton()
 
-    def __rich__(self):
+    def render(self):
         return Align.center(num_to_str(self.count), vertical='middle', height=15)
 
     # def __rich_console__(self, console: Console, options: ConsoleOptions):
@@ -63,8 +63,7 @@ class ResetButton(Widget, MouseOverMixin):
         style = None
         if self.mouse_over:
             style = 'bold'
-        style = Style(link='google.com')
-        return Align.right(self.icon + ' wtf is going on', width=30, height=2, style=style)
+        return Align.right(self.icon, height=2, style=style)
 
 
 class ToTrack(Widget):
@@ -93,13 +92,20 @@ class ToTrack(Widget):
         return grid
 
     def on_click(self, event: events.Click) -> None:
+        self.log(f'I HAVE CLICKED: {self._refresh_button_clicked(event)}')
         if self._refresh_button_clicked(event):
-            return self.clicker.reset()
+            self.clicker.reset()
+        else:
+            self.clicker.count += 1
+
+        self.refresh()
 
     def _refresh_button_clicked(self, event: events.Click):
         x, y = self.size
         self.log('>>>>>>>', event.x, event.y, x, y)
-        return (event.x, event.y) == (x - 1, y - 1)
+
+        return event.x in {35, 36} and event.y == 17
+    # x - 4, x - 3, y - 5
 
     # def __rich__(self):
 
@@ -117,6 +123,10 @@ class ClickTracker(App):
             ToTrack('stuff', 'dark_green'),
             ToTrack('tuse', 'blue'),
             ToTrack('tuse', 'blue'),
+            ToTrack('tuse', 'blue'),
+            ToTrack('stuff', 'dark_green'),
+            ToTrack('stuff', 'dark_green'),
+            ToTrack('stuff', 'dark_green'),
             ToTrack('tuse', 'blue'),
             ToTrack('stuff', 'dark_green'),
             ToTrack('stuff', 'dark_green'),

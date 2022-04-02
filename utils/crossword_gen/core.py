@@ -46,7 +46,7 @@ class BoardInfo(NamedTuple):
 
     @classmethod
     def from_board_clues(cls, board: Board, clues: dict[WordStart, str]):
-        res: dict[str, dict[int, w]] = defaultdict(dict)
+        res: dict[str, dict[int, str]] = defaultdict(dict)
         for ws, w in clues.items():
             res[ws.dir.value][ws.clue_num] = w
         return cls(board, {dir: dict(sorted(v.items())) for dir, v in res.items()})
@@ -55,7 +55,7 @@ class BoardInfo(NamedTuple):
         color = color or random_color()
         num_rows = len(starting_grid)
         num_cols = len(starting_grid[0])
-        res = [[None] * num_cols for _ in range(num_rows)]
+        res: list[list[Text | None]] = [[None] * num_cols for _ in range(num_rows)]  
 
         for r, c in product(range(num_rows), range(num_cols)):
             cell = self.board.get((r, c))

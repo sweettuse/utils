@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -223,7 +224,7 @@ def _run_one(*, size_or_grid: int | Grid = 5, to_gif=False, retry_after_secs=0.0
 
 def generate_constraints(filename, num_words=float('inf')):
     cm = ConstraintManager(filename, num_words=num_words)
-    cm.generate_constraints(lambda word_len: word_len <= 11)
+    cm.generate_constraints(lambda word_len: word_len <= 12)
 
 
 def gen_nines():
@@ -236,7 +237,7 @@ def gen_elevens():
 
 @timer
 def __main():
-    # _run_one(size_or_grid=7)
+    _run_one(size_or_grid=7)
     # return generate_constraints('words_in_order.txt', 40000)
     bis = [_run_one(size_or_grid=7, retry_after_secs=.1) for _ in range(12)]
     _to_html(_create_waffle_grid(7), bis, '/tmp/matt.html')
@@ -250,13 +251,13 @@ def __main():
         [1, 1, 1, 1, 1, 1],
         [1, 1, 1, 0, 1, 1],
     ]
-    g = [
-        [1] * 6,
-        [1] * 6,
-        [1] * 6,
-        [1] * 6,
-        [1] * 6,
-    ]
+    # g = [
+    #     [1] * 6,
+    #     [1] * 6,
+    #     [1] * 6,
+    #     [1] * 6,
+    #     [1] * 6,
+    # ]
     _run_one(size_or_grid=g, retry_after_secs=.1)
     return
     square = 6
