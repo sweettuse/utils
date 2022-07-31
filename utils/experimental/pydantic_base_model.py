@@ -9,15 +9,21 @@ class PosBaseModel(BaseModel):
     """
 
     def __init_subclass__(cls, **kwargs):
-        PosBaseModel._make_pos(cls)
+        PosBaseModel._make_positional_init(cls)
 
     @staticmethod
-    def _make_pos(cls):
+    def _make_positional_init(cls):
         kwargs = {}
         for c in reversed(cls.__mro__):
             kwargs.update(getattr(c, '__annotations__', {}))
 
-        sentinel = object()
+        # __slots__ is in annotations at this point. the below removes any dunders with annotations
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if not (k.startswith('__') and k.endswith('__'))
+        }
+        sentinel = object()  # noqa
         argstr = ','.join(f'{k}=sentinel' for k in kwargs)
         body = (
             f'def __init__(self, {argstr}, **from_subclasses):\n'
@@ -47,8 +53,10 @@ def __main():
         d: Any
 
     m = Model(a=1, b=2)
-    u = Under(1, 2, 3, 4)
     print(m)
+    m = Model(1, b=2)
+    print(m)
+    u = Under(1, 2, c=3, d=4)
     print(u)
     return
 
