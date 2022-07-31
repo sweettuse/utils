@@ -35,6 +35,7 @@ class Pages(Enum):
     sachith = '86c3ac785c0b41d4848c9a928f3748b6'
     coding_questions = '05d955889a4e449f9df3e9810d0eb768'
     wth = '27a05db9f7504b78b0b74adc18b3f4d2'
+    today_todo = 'bbfc4954778f4935a27603e7867e593a'
 
     @property
     def page(self):

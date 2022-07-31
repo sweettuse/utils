@@ -237,7 +237,7 @@ def gen_elevens():
 
 @timer
 def __main():
-    _run_one(size_or_grid=7)
+    _run_one(size_or_grid=3)
     # return generate_constraints('words_in_order.txt', 40000)
     bis = [_run_one(size_or_grid=7, retry_after_secs=.1) for _ in range(12)]
     _to_html(_create_waffle_grid(7), bis, '/tmp/matt.html')

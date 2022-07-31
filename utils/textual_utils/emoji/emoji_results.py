@@ -80,6 +80,7 @@ class EmojiResults(Widget, FocusMixin):
     async def on_click(self, event: events.Click) -> None:
         """copy emoji to clipboard"""
         info = val = None
+        border_style = None
         try:
             idx = event.y - 1
             if idx < self.height - 2:
@@ -99,7 +100,7 @@ class EmojiResults(Widget, FocusMixin):
             self._alert_copied(info, border_style)  # noqa
         self.log(f'bleep {val}')
 
-    def _alert_copied(self, info, border_style):
+    def _alert_copied(self, info, border_style, set_for_secs=2):
         """change border/title to reflect that copying has occurred"""
         self._title_override = info
         self.border_style = border_style
@@ -116,7 +117,7 @@ class EmojiResults(Widget, FocusMixin):
             self.border_style = self._orig_border_style
             self.refresh()
 
-        self.set_timer(1, _reset_title)
+        self.set_timer(set_for_secs, _reset_title)
 
     def down(self, amount=1):
         if len(self._emoji) > 1:
