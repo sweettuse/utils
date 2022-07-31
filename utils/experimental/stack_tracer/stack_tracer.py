@@ -10,7 +10,7 @@ from rich import print
 EventType = Literal['call', 'line', 'return', 'exception', 'opcode']
 
 CodeStackKey: TypeAlias = tuple[str, str]
-CodeStackEntry: TypeAlias =tuple[CodeStackKey, inspect.Traceback] 
+CodeStackEntry: TypeAlias = tuple[CodeStackKey, inspect.Traceback]
 CodeStackEntries: TypeAlias = list[CodeStackEntry]
 
 
@@ -23,9 +23,7 @@ class CodeStack:
         self._stack.append((self._make_key(tb), tb))
         self._last_action = 'add'
 
-    def remove(
-        self, tb: inspect.Traceback
-    ) -> Optional[CodeStackEntries]:
+    def remove(self, tb: inspect.Traceback) -> Optional[CodeStackEntries]:
         if not self._stack:
             return
 
@@ -58,9 +56,10 @@ class CodeStack:
 
 class StackTracer:
     """context manager to trace stacks of calls within
-    
+
     useful for debugging what code paths your code is taking when you can't easily set a breakpoint
     """
+
     def __init__(self, num_lines_context=0):
         self._code_stack = CodeStack()
         self._stacks = []
@@ -104,4 +103,3 @@ class StackTracer:
             print(*(s[0][1] for s in stack))
             # print(*map(itemgetter(0), stack))
         print('=========')
-
