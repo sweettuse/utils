@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import nullcontext
 import inspect
 from operator import itemgetter
 import sys
@@ -66,6 +67,22 @@ class _CodeStack:
         return '\n'.join(map(str, res))
 
 
+class _TempDisableTracing:
+    """temporarily disable then reenable StackTracer tracing
+
+    could've just used `contextmanager` instead but it's relatively slow due to yield machinery
+    """
+
+    def __init__(self, st: StackTracer):
+        self._st = st
+
+    def __enter__(self):
+        sys.settrace(None)
+
+    def __exit__(self, *_, **__):
+        sys.settrace(self._st)
+
+
 class StackTracer:
     """context manager to trace stacks of calls within
 
@@ -81,8 +98,9 @@ class StackTracer:
         self._code_stack = _CodeStack()
         self._stacks: list[CodeStackEntries] = []
         self._num_lines_context = num_lines_context
-        self._in_context = False  # are we within the context manager. don't want to display while within, can cause recursion issues...
+        self._in_context = False  # are we within the context manager? need to disable tracing e.g. during `display`
         self._trace_pred = trace_pred
+        self._temp_disabler = _TempDisableTracing(self)
 
     def _local(self, frame: FrameType, event: EventType, arg: Any) -> None:
         """local tracing function used to record return/exceptions"""
@@ -93,21 +111,18 @@ class StackTracer:
     def __call__(self, frame: FrameType, event: EventType, arg: Any) -> None:
         """actual global tracing function"""
         if self._trace_pred:
-            try:
-                sys.settrace(None)
+            with self._temp_disabler:
                 if not self._trace_pred(frame):
                     return
-            finally:
-                sys.settrace(self)
 
-        tb = inspect.getframeinfo(frame, context=0)
+        tb = inspect.getframeinfo(frame, context=self._num_lines_context)
         self._code_stack.add(tb)
 
         # set local tracing func
         frame.f_trace = self._local
         frame.f_trace_lines = False
 
-    def __enter__(self):
+    def __enter__(self) -> StackTracer:
         self._in_context = True
         sys.settrace(self)
         return self
@@ -117,10 +132,10 @@ class StackTracer:
         sys.settrace(None)
 
     def display(self) -> None:
-        if self._in_context:
-            return
-        print('=========')
-        for stack in self._stacks:
-            print(*(s[0][1] for s in stack))
-            # print(*map(itemgetter(0), stack))
-        print('=========')
+        cm = self._temp_disabler if self._in_context else nullcontext()
+        with cm:
+            print('=========')
+            for stack in self._stacks:
+                print(*(s[0][1] for s in stack))
+                # print(*map(itemgetter(0), stack))
+            print('=========')

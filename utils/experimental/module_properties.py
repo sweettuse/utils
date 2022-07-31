@@ -38,8 +38,11 @@ def _wrap_property(prop):
 
 
 def enable_module_properties():
-    globs = sys._getframe(1).f_globals
-    name = globs['__name__']
+    """wrap properties to not require 'self' and then create new module with these properties
+
+    if no properties, just return - no reason to create a new module
+    """
+    name = sys._getframe(1).f_globals['__name__']
     module = sys.modules[name]
     props, body = {}, {}
     for n, v in vars(module).items():
@@ -47,6 +50,9 @@ def enable_module_properties():
             props[n] = _wrap_property(v)
         else:
             body[n] = v
+
+    if not props:
+        return
 
     new = sys.modules[name] = type(name, (type(module),), props)(name)
     for k, v in body.items():
