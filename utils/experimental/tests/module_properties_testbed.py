@@ -6,23 +6,23 @@ _l = [1]
 
 @property
 def p():
-    print('in getter')
+    print('in p getter')
     return _p
 
 @p.setter
 def p(value):
-    print('in setter')
+    print('in p setter')
     global _p
     _p = value
 
 @property
 def l():
-    print('in getter')
+    print('in l getter')
     return _l
 
-@p.setter
+@l.setter
 def l(value):
-    print('in setter')
+    print('in l setter')
     global _l
     _l = value
 
