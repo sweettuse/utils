@@ -49,7 +49,9 @@ def _test_no_exception():
 
 
 def _test_exception():
-    with StackTracer() as st:
+    with StackTracer(
+        trace_pred=lambda frame: 'sweettuse/utils/utils' in frame.f_code.co_filename
+    ) as st:
         with suppress(Exception):
             f()
         d()

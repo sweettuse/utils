@@ -3,7 +3,7 @@ import inspect
 from operator import itemgetter
 import sys
 from types import FrameType
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 from typing_extensions import TypeAlias
 from rich import print
 
@@ -12,9 +12,15 @@ EventType = Literal['call', 'line', 'return', 'exception', 'opcode']
 CodeStackKey: TypeAlias = tuple[str, str]
 CodeStackEntry: TypeAlias = tuple[CodeStackKey, inspect.Traceback]
 CodeStackEntries: TypeAlias = list[CodeStackEntry]
+TracePredicate: TypeAlias = Callable[[FrameType], bool]
 
 
-class CodeStack:
+class _CodeStack:
+    """store the current stack info as it's running
+
+    used to process trace events and adjust the stack accordingly
+    """
+
     def __init__(self):
         self._stack: CodeStackEntries = []
         self._last_action: Optional[Literal['add', 'remove']] = None
@@ -24,6 +30,12 @@ class CodeStack:
         self._last_action = 'add'
 
     def remove(self, tb: inspect.Traceback) -> Optional[CodeStackEntries]:
+        """remove func from stack
+
+        if we're just starting to go back up the call stack, it means we've reached a local minimum.
+            copy the stack before removal and ultimately return that
+        otherwise, we're currently working our way up the stack, no need to return anything
+        """
         if not self._stack:
             return
 
@@ -57,28 +69,37 @@ class CodeStack:
 class StackTracer:
     """context manager to trace stacks of calls within
 
-    useful for debugging what code paths your code is taking when you can't easily set a breakpoint
+    useful for debugging what code paths your code is taking when you can't easily break
+
+    provide `trace_pred` to filter out frames you don't want to trace
+        only trace when `trace_pred` returns a truthy value
     """
 
-    def __init__(self, num_lines_context=0):
-        self._code_stack = CodeStack()
-        self._stacks = []
+    def __init__(
+        self, trace_pred: Optional[TracePredicate] = None, num_lines_context=0
+    ):
+        self._code_stack = _CodeStack()
+        self._stacks: list[CodeStackEntries] = []
         self._num_lines_context = num_lines_context
         self._in_context = False  # are we within the context manager. don't want to display while within, can cause recursion issues...
+        self._trace_pred = trace_pred
 
     def _local(self, frame: FrameType, event: EventType, arg: Any) -> None:
         """local tracing function used to record return/exceptions"""
         tb = inspect.getframeinfo(frame, context=self._num_lines_context)
-        if event in {'return', 'exception'}:
-            if res := self._code_stack.remove(tb):
-                self._stacks.append(res)
+        if event in {'return', 'exception'} and (res := self._code_stack.remove(tb)):
+            self._stacks.append(res)
 
     def __call__(self, frame: FrameType, event: EventType, arg: Any) -> None:
         """actual global tracing function"""
+        if self._trace_pred:
+            try:
+                sys.settrace(None)
+                if not self._trace_pred(frame):
+                    return
+            finally:
+                sys.settrace(self)
 
-        # only trace functions in our codebase
-        if 'sweettuse/utils/utils' not in frame.f_code.co_filename:
-            return
         tb = inspect.getframeinfo(frame, context=0)
         self._code_stack.add(tb)
 
