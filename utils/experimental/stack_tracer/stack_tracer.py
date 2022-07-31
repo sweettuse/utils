@@ -7,8 +7,6 @@ from typing import Any, Literal, Optional
 from typing_extensions import TypeAlias
 from rich import print
 
-from utils.experimental.mud.mud import run_by_clock
-
 EventType = Literal['call', 'line', 'return', 'exception', 'opcode']
 
 CodeStackKey: TypeAlias = tuple[str, str]
