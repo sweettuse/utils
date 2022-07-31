@@ -1,9 +1,7 @@
 from __future__ import annotations
-from contextlib import suppress
 import inspect
 from operator import itemgetter
 import sys
-from traceback import StackSummary
 from types import FrameType
 from typing import Any, Literal, Optional
 from typing_extensions import TypeAlias
