@@ -2,6 +2,8 @@
 allow properties to be used at the module level
 
 to use, in the module, do something like:
+
+NOTE: pretty broken
 # >>> _b = 14
 # >>>
 # >>> @property
@@ -39,6 +41,7 @@ def _wrap_property(prop):
 def enable_module_properties():
     globs = sys._getframe(1).f_globals
     name = globs['__name__']
+    print(f'{name=}')
     module = sys.modules[name]
     props, body = {}, {}
     for n, v in vars(module).items():
@@ -50,3 +53,5 @@ def enable_module_properties():
     new = sys.modules[name] = type(name, (type(module),), props)(name)
     for k, v in body.items():
         setattr(new, k, v)
+    print(props)
+    # print(body)
