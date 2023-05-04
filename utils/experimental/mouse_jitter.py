@@ -5,12 +5,10 @@ from itertools import cycle
 
 
 def move_mouse():
-    offsets = cycle((1, -1))
-    while True:
+    for o in cycle((1, -1)):
         x, y = pyautogui.position()
-        o = next(offsets)
         pyautogui.moveTo(x + o, y + o)
-        time.sleep(60)
+        time.sleep(1)
 
 
 if __name__ == '__main__':

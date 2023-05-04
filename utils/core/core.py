@@ -13,7 +13,7 @@ from rich.table import Table
 _do_not_export = set(globals())
 
 
-def generate__all__(globals, excluded):
+def generate__all__(globals, excluded) -> list[str]:
     """create `__all__` values from globals
     first argument MUST be set to `globals()`
     exclude excluded and protected vals(i.e. `startswith('_')`)
@@ -83,8 +83,7 @@ def make_iter(v, treat_as_not_iterable=(str, bytes, dict)):
 
 def chunk(iterable: Iterable[Any], chunksize: int, return_type=list):
     """chunk iterable into smaller bites"""
-    yield from iter(lambda it=iter(iterable):
-                    return_type(islice(it, chunksize)), return_type())
+    yield from iter(lambda it=iter(iterable): return_type(islice(it, chunksize)), return_type())
 
 
 def async_memoize(func=None, *, configuration=None):
